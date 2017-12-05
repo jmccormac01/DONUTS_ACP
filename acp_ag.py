@@ -2,15 +2,13 @@
 ACP + DONUTS Autoguiding
 
 Usage:
-    $> acp_guider INSTRUMENT [--debug]
+    $> python acp_guider.py INSTRUMENT [--debug]
 
 where INSRTRUMENT can be:
     nites
     speculoos
 
-Contributors
-------------
-James McCormac
+and --debug disables corrections being sent to the telescope
 """
 import time
 import os
