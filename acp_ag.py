@@ -200,7 +200,7 @@ def getDataDir(tomorrow):
         tomorrow = 0
     d = date.today()-timedelta(days=token)+timedelta(days=tomorrow)
     x = "%d%02d%02d" % (d.year, d.month, d.day)
-    data_loc = "%s%s" % (BASE_DIR, x)
+    data_loc = "%s\\%s" % (BASE_DIR, x)
     if os.path.exists(data_loc):
         return data_loc
     else:

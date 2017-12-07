@@ -1,5 +1,5 @@
 """
-Confiuguration parameters for SPECULOOS
+Confiuguration parameters for NITES
 """
 # e.g. .fits or .fit etc
 IMAGE_EXTENSION = "*.fts"
@@ -29,7 +29,7 @@ DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
 MAX_ERROR_PIXELS = 20
 
 # ACP data base directory
-BASE_DIR = "C:\\data\\"
+BASE_DIR = "C:\\data"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
