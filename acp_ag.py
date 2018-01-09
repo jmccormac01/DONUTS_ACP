@@ -2,7 +2,7 @@
 ACP + DONUTS Autoguiding
 
 Usage:
-    $> python acp_guider.py INSTRUMENT [--debug]
+    $> python acp_ag.py INSTRUMENT [--debug]
 
 where INSRTRUMENT can be:
     nites
