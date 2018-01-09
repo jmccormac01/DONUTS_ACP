@@ -20,7 +20,7 @@ SIGMA_BUFFER = 5
 WAITTIME = 21600
 
 # pulseGuide conversions
-PIX2TIME = {'x': 100.00, 'y': 100}
+PIX2TIME = {'x': 100.00, 'y': 100.00}
 
 # guide directions
 DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
@@ -29,7 +29,7 @@ DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
 MAX_ERROR_PIXELS = 20
 
 # ACP data base directory
-BASE_DIR = "C:\\data"
+BASE_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
