@@ -29,7 +29,10 @@ def argParse():
                    choices=['nites', 'speculoos'])
     p.add_argument('--pulse_time',
                    help='time (ms) to pulse the mount during calibration',
-                   default=2000)
+                   default=5000)
+    p.add_argument('--analyse',
+                   help='perform analysis of images',
+                   action='store_true')
     return p.parse_args()
 
 def connectTelescope():
@@ -66,7 +69,7 @@ def connectCamera():
         CAMERA_READY = False
     return myCamera, CAMERA_READY
 
-def takeImageWithMaxIm(camera_object, image_path, filter_id=0,
+def takeImageWithMaxIm(camera_object, image_path, filter_id=1,
                        exptime=10, t_settle=1):
     """
     Take an image with MaxImDL
@@ -103,25 +106,27 @@ def determineShiftDirectionMagnitude(shft):
     sy = shft.y.value
     if abs(sx) > abs(sy):
         if sx > 0:
-            direction = '+x'
-        else:
             direction = '-x'
+        else:
+            direction = '+x'
         magnitude = abs(sx)
     else:
         if sy > 0:
-            direction = '+y'
-        else:
             direction = '-y'
+        else:
+            direction = '+y'
         magnitude = abs(sy)
     return direction, magnitude
 
-def newFilename(data_dir, image_id, IMAGE_EXTENSION):
+def newFilename(data_dir, direction, pulse_time,
+                image_id, IMAGE_EXTENSION):
     """
     Generate new FITS image name
     """
-    ref_image = "{}\\{}{}".format(data_dir, image_id, IMAGE_EXTENSION)
+    fname = "{}\\step_{}_d{}_{}ms{}".format(data_dir, image_id, direction,
+                                            pulse_time, IMAGE_EXTENSION)
     image_id += 1
-    return ref_image, image_id
+    return fname, image_id
 
 if __name__ == "__main__":
     args = argParse()
@@ -145,56 +150,66 @@ if __name__ == "__main__":
     myCamera, CAMERA_READY = connectCamera()
     # start the calibration run
     print("Starting calibration run...")
-    ref_image, image_id = newFilename(data_dir, image_id, IMAGE_EXTENSION)
+    ref_image, image_id = newFilename(data_dir, 'R', 0, image_id, IMAGE_EXTENSION)
     takeImageWithMaxIm(myCamera, ref_image)
     # set up donuts with this reference point. Assume default params for now
-    donuts_ref = Donuts(ref_image)
+    if args.analyse:
+        donuts_ref = Donuts(ref_image)
     # get image name and make it the reference
     # donuts_ref = Donuts(ref_image)
     for i in range(10):
         # direction 0
         pulseGuide(myScope, 0, args.pulse_time)
-        check, image_id = newFilename(data_dir, image_id, IMAGE_EXTENSION)
+        check, image_id = newFilename(data_dir, 0, args.pulse_time,
+                                      image_id, IMAGE_EXTENSION)
         takeImageWithMaxIm(myCamera, check)
-        shift = donuts_ref.measure_shift(check)
-        direction, magnitude = determineShiftDirectionMagnitude(shift)
-        DIRECTION_STORE[0].append(direction)
-        SCALE_STORE[0].append(magnitude)
-        donuts_ref = Donuts(check)
+        if args.analyse:
+            shift = donuts_ref.measure_shift(check)
+            direction, magnitude = determineShiftDirectionMagnitude(shift)
+            DIRECTION_STORE[0].append(direction)
+            SCALE_STORE[0].append(magnitude)
+            donuts_ref = Donuts(check)
         # direction 1
         pulseGuide(myScope, 1, args.pulse_time)
-        check, image_id = newFilename(data_dir, image_id, IMAGE_EXTENSION)
+        check, image_id = newFilename(data_dir, 1, args.pulse_time,
+                                      image_id, IMAGE_EXTENSION)
         takeImageWithMaxIm(myCamera, check)
-        shift = donuts_ref.measure_shift(check)
-        direction, magnitude = determineShiftDirectionMagnitude(shift)
-        DIRECTION_STORE[1].append(direction)
-        SCALE_STORE[1].append(magnitude)
-        donuts_ref = Donuts(check)
+        if args.analyse:
+            shift = donuts_ref.measure_shift(check)
+            direction, magnitude = determineShiftDirectionMagnitude(shift)
+            DIRECTION_STORE[1].append(direction)
+            SCALE_STORE[1].append(magnitude)
+            donuts_ref = Donuts(check)
         # direction 2
         pulseGuide(myScope, 2, args.pulse_time)
-        check, image_id = newFilename(data_dir, image_id, IMAGE_EXTENSION)
+        check, image_id = newFilename(data_dir, 2, args.pulse_time,
+                                      image_id, IMAGE_EXTENSION)
         takeImageWithMaxIm(myCamera, check)
-        shift = donuts_ref.measure_shift(check)
-        direction, magnitude = determineShiftDirectionMagnitude(shift)
-        DIRECTION_STORE[2].append(direction)
-        SCALE_STORE[2].append(magnitude)
-        donuts_ref = Donuts(check)
+        if args.analyse:
+            shift = donuts_ref.measure_shift(check)
+            direction, magnitude = determineShiftDirectionMagnitude(shift)
+            DIRECTION_STORE[2].append(direction)
+            SCALE_STORE[2].append(magnitude)
+            donuts_ref = Donuts(check)
         # direction 3
         pulseGuide(myScope, 3, args.pulse_time)
-        check, image_id = newFilename(data_dir, image_id, IMAGE_EXTENSION)
+        check, image_id = newFilename(data_dir, 3, args.pulse_time,
+                                      image_id, IMAGE_EXTENSION)
         takeImageWithMaxIm(myCamera, check)
-        shift = donuts_ref.measure_shift(check)
-        direction, magnitude = determineShiftDirectionMagnitude(shift)
-        DIRECTION_STORE[3].append(direction)
-        SCALE_STORE[3].append(magnitude)
-        donuts_ref = Donuts(check)
+        if args.analyse:
+            shift = donuts_ref.measure_shift(check)
+            direction, magnitude = determineShiftDirectionMagnitude(shift)
+            DIRECTION_STORE[3].append(direction)
+            SCALE_STORE[3].append(magnitude)
+            donuts_ref = Donuts(check)
     # now do some analysis on the run from above
     # check that the directions are the same everytime for each orientation
-    for direc in DIRECTION_STORE:
-        print(DIRECTION_STORE[direc])
-        assert len(set(DIRECTION_STORE[direc])) == 1
-        print('{}: {}'.format(direc, DIRECTION_STORE[direc][0]))
-    # now work out the ms/pix scales from the calbration run above
-    for direc in SCALE_STORE:
-        print('{}: {:.2f} ms/pixel'.format(direc,
-                                           args.pulse_time/np.average(SCALE_STORE[direc])))
+    if args.analyse:
+        for direc in DIRECTION_STORE:
+            print(DIRECTION_STORE[direc])
+            assert len(set(DIRECTION_STORE[direc])) == 1
+            print('{}: {}'.format(direc, DIRECTION_STORE[direc][0]))
+        # now work out the ms/pix scales from the calbration run above
+        for direc in SCALE_STORE:
+            print('{}: {:.2f} ms/pixel'.format(direc,
+                                               args.pulse_time/np.average(SCALE_STORE[direc])))
