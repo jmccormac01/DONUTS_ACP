@@ -123,8 +123,8 @@ def newFilename(data_dir, direction, pulse_time,
     """
     Generate new FITS image name
     """
-    fname = "{}\\step_{}_d{}_{}ms{}".format(data_dir, image_id, direction,
-                                            pulse_time, IMAGE_EXTENSION)
+    fname = "{}\\step_{:03d}_d{}_{}ms{}".format(data_dir, image_id, direction,
+                                                pulse_time, IMAGE_EXTENSION)
     image_id += 1
     return fname, image_id
 
