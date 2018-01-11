@@ -2,7 +2,7 @@
 Confiuguration parameters for SPECULOOS
 """
 # e.g. .fits or .fit etc
-IMAGE_EXTENSION = "*.fts"
+IMAGE_EXTENSION = ".fts"
 
 # header keyword for the current filter
 FILTER_KEYWORD = 'FILTER'
