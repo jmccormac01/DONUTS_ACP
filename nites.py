@@ -7,6 +7,12 @@ IMAGE_EXTENSION = "*.fts"
 # header keyword for the current filter
 FILTER_KEYWORD = 'FILTER'
 
+# header keyword for the current target/field
+FIELD_KEYWORD = 'OBJECT'
+
+# RA axis alignment along x or y?
+RA_AXIS = 'y'
+
 # guider log file name
 LOGFILE = "guider.log"
 

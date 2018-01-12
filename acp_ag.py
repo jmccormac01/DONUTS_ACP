@@ -32,12 +32,25 @@ from donuts import Donuts
 # pylint: disable = redefined-outer-name
 # pylint: disable = line-too-long
 
-# TODO: Assumes field name is in the filename, add check to header if not
+# autoguider status flags
+ag_timeout, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
 
 # get command line arguments
 def argParse():
     """
     Parse command line arguments
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    argparse argument object
+
+    Raises
+    ------
+    None
     """
     p = ap.ArgumentParser()
     p.add_argument('instrument',
@@ -50,7 +63,21 @@ def argParse():
 
 def strtime(dt):
     """
-    Return a string formatted datetime
+    Return a string formatted datetime in the iso format
+
+    Parameters
+    ----------
+    dt : datetime object
+        datetime object to convert to iso formatted string
+
+    Returns
+    -------
+    datetime : string
+        iso formatted string
+
+    Raises
+    ------
+    None
     """
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -58,6 +85,24 @@ def strtime(dt):
 def scopeCheck(verbose):
     """
     Check the telescope and connect
+
+    Parameters
+    ----------
+    verbose : string
+        Level of verbosity
+
+    Returns
+    -------
+    connected : boolean
+        Is the telescope currently connected?
+    can : array-like
+        List of things the telescope can do
+    site : array-like
+        List of observatory site information
+
+    Raises
+    ------
+    None
     """
     can, site = [], []
     connected = myScope.Connected
@@ -109,14 +154,27 @@ def scopeCheck(verbose):
 # apply guide corrections
 def guide(x, y):
     """
-    Generic guide command
+    Generic autoguiding command with built-in PID control loop
+    guide() will track recent autoguider corrections and ignore
+    abnormally large offsets. It will also handle orientation
+    and scale conversions as per the telescope specific config
+    file.
 
-    Pulse Guiding Command Config:
-    Directions:   0 - guideNorth
-                  1 - guideSouth
-                  2 - guideEast
-                  3 - guideWest
+    Parameters
+    ----------
+    x : float
+        Guide correction to make in X direction
+    y : float
+        Guide correction to make in Y direction
 
+    Returns
+    -------
+    success : boolean
+        Was the correction applied successfully?
+
+    Raises
+    ------
+    None
     """
     connected = myScope.Connected
     if str(connected) == 'True':
@@ -145,15 +203,27 @@ def guide(x, y):
         print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
         # abs() on -ve duration otherwise throws back an error
         if pidy > 0:
-            myScope.PulseGuide(DIRECTIONS['+y'], (pidy * PIX2TIME['y'])/cos_dec)
+            guide_time_y = pidy * PIX2TIME['+y']
+            if RA_AXIS == 'y':
+                guide_time_y = guide_time_y/cos_dec
+            myScope.PulseGuide(DIRECTIONS['+y'], guide_time_y)
         if pidy < 0:
-            myScope.PulseGuide(DIRECTIONS['-y'], abs(pidy * PIX2TIME['y'])/cos_dec)
+            guide_time_y = abs(pidy * PIX2TIME['-y'])
+            if RA_AXIS == 'y':
+                guide_time_y = guide_time_y/cos_dec
+            myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.10)
         if pidx > 0:
-            myScope.PulseGuide(DIRECTIONS['+x'], pidx * PIX2TIME['x'])
+            guide_time_x = pidx * PIX2TIME['+x']
+            if RA_AXIS == 'x':
+                guide_time_x = guide_time_x/cos_dec
+            myScope.PulseGuide(DIRECTIONS['+x'], guide_time_x)
         if pidx < 0:
-            myScope.PulseGuide(DIRECTIONS['-x'], abs(pidx * PIX2TIME['x']))
+            guide_time_x = abs(pidx * PIX2TIME['-x'])
+            if RA_AXIS == 'x':
+                guide_time_x = guide_time_x/cos_dec
+            myScope.PulseGuide(DIRECTIONS['-x'], guide_time_x)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.10)
         print("Guide correction Applied")
@@ -169,19 +239,59 @@ def guide(x, y):
     return success
 
 # log guide corrections
-def logShifts(logfile, ref, name, x, y, cx, cy):
+def logShifts(logfile, ref, check, x, y, cx, cy):
     """
-    Log the guide corrections
+    Log the guide corrections to disc. This log is
+    typically located with the data files for each night
+
+    Parameters
+    ----------
+    logfile : string
+        Path to the logfile
+    ref : str
+        Name of the current reference image
+    check : string
+        Name of the current guide image
+    x : float
+        Guide correction in X direction
+    y : float
+        Guide correction in Y direction
+    cx : string
+        Culled X measurement? y | n
+    cy : string
+        Culled Y measurement? y | n
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
     """
     with open(logfile, "a") as outfile:
         line = "[{}] {}\t{}\t{:.2f}\t{:.2f}\t{}\t{}\n".format(datetime.utcnow().isoformat(),
-                                                              ref, name, x, y, cx, cy)
+                                                              ref, check, x, y, cx, cy)
         outfile.write(line)
 
 # get evening or morning
 def getAmOrPm():
     """
-    Get if it is morning or afteroon
+    Determine if it is morning or afteroon
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    token : int
+        0 if evening
+        1 if morning
+
+    Raises
+    ------
+    None
     """
     now = datetime.utcnow()
     if now.hour >= 12:
@@ -194,6 +304,20 @@ def getAmOrPm():
 def getDataDir(tomorrow):
     """
     Get tonight's data directory
+
+    Parameters
+    ----------
+    tomorrow : int
+        Number of days since daemon started
+
+    Returns
+    -------
+    data_loc : string
+        Path to tonight's data directory
+
+    Raises
+    ------
+    None
     """
     token = getAmOrPm()
     if token > 0 and tomorrow > 0:
@@ -207,57 +331,92 @@ def getDataDir(tomorrow):
         return 1
 
 # wait for the newest image
-def waitForImage(field, tlim, imgs, cf):
+def waitForImage(current_field, timeout_limit, n_images, current_filter):
     """
-    Wait for images
+    Wait for new images. Several things can happen:
+        0. No new images come before timeout time, night is over
+        1. A new image comes in of new field and filter (new start)
+        2. A new image comes in but of a new field (new field)
+        3. A new image comes in but with a different filter (new filter)
+        4. No change occurs and same field and filter apply (no_change)
+
+    Parameters
+    ----------
+    current_field : string
+        name of the current target
+    timeout_limit : int
+        timeout in seconds before giving up for the night
+    n_images : int
+        number of images previously acquired
+    current_filter : string
+        name of the current filter
+
+    Returns
+    -------
+                return ag_no_change, newest_image, newest_field, current_filter
+    ag_status : int
+        flag showing the current return status, see table above
+    newest_image : string
+        filenname of the newest image
+    newest_field : string
+        name of the newest field
+    newest_filter : string
+        name of the newest filter
+
+    Raises
+    ------
+    None
     """
     timeout = 0
     while 1:
-        t = g.glob(IMAGE_EXTENSION)
+        t = g.glob('*{}'.format(IMAGE_EXTENSION))
         # get newest image
         try:
-            newest_img = max(t, key=os.path.getctime)
+            newest_image = max(t, key=os.path.getctime)
+            newest_field = fits.open(newest_image)[0].header[FIELD_KEYWORD]
         except ValueError:
-            newest_img = 'xxx.fts'
+            newest_image = 'xxx.fts'
+            newest_field = "xxx"
         # check for no images or Tabby
-        if len(t) == imgs:
+        if len(t) == n_images:
             timeout = timeout + 1
             time.sleep(1)
             if timeout % 5 == 0:
-                print("[{}/{}:{} - {}] No new images...".format(timeout, tlim, imgs,
+                print("[{}/{}:{} - {}] No new images...".format(timeout, timeout_limit, n_images,
                                                                 strtime(datetime.utcnow())))
-            if timeout > tlim:
-                print("No new images in {} min, exiting...".format(int(tlim/60.)))
-                return 1
+            if timeout > timeout_limit:
+                print("No new images in {} min, exiting...".format(int(timeout_limit/60.)))
+                return ag_timeout, newest_image, None, None
             continue
         # check for new images and not Tabby
-        if len(t) > imgs:
+        if len(t) > n_images:
             timeout = 0
             # check for latest image - wait to be sure it's on disk
             time.sleep(1)
             # check what filter
             try:
-                h = fits.open(newest_img)
+                h = fits.open(newest_image)
             except IOError:
-                print("Problem opening {0:s}...".format(newest_img))
+                print("Problem opening {0:s}...".format(newest_image))
                 continue
-            nf = h[0].header[FILTER_KEYWORD]
+            newest_filter = h[0].header[FILTER_KEYWORD]
+            newest_field = h[0].header[FIELD_KEYWORD]
             # new start? if so, return the first new image
-            if field == "" and cf == "":
+            if current_field == "" and current_filter == "":
                 print("New start...")
-                return newest_img, nf
+                return ag_new_start, newest_image, newest_field, newest_filter
             # check that the field is the same
-            if field != "" and field not in newest_img:
+            if current_field != "" and current_field != newest_field:
                 print("New field detected...")
-                return 999, nf
+                return ag_new_field, newest_image, newest_field, newest_filter
             # check that the field is the same but filter has changed
-            if field != "" and field in newest_img and cf != nf:
+            if current_field != "" and current_field == newest_field and current_filter != newest_filter:
                 print("Same field but different filter, changing ref image...")
-                return 888, nf
-            # check the field ad filters are the same
-            if field != "" and field in newest_img and cf == nf:
+                return ag_new_filter, newest_image, newest_field, newest_filter
+            # check the field and filters are the same
+            if current_field != "" and current_field == newest_field and current_filter == newest_filter:
                 print("Same field and same filter, continuing...")
-                return newest_img, cf
+                return ag_no_change, newest_image, newest_field, newest_filter
 
 if __name__ == "__main__":
     # read the command line args
@@ -292,10 +451,7 @@ if __name__ == "__main__":
         sys.exit(1)
     # used to determine when a night is classified as over
     tomorrow = 0
-    # dictionaries to hold reference projections from different filters
-    # and reference file names for printing
-    ref_xproj = {}
-    ref_yproj = {}
+    # dictionaries to hold reference images for different fields/filters
     ref_track = {}
     # multiple day loop
     while 1:
@@ -323,22 +479,20 @@ if __name__ == "__main__":
         # if we get to here we assume we have found the data directory
         # and that the scope is connected
         # get a list of the images in the directory
-        templist = g.glob(IMAGE_EXTENSION)
+        templist = g.glob('*{}'.format(IMAGE_EXTENSION))
         # check for any data in there
-        old_i = len(templist)
+        n_images = len(templist)
         # if no reference images appear for WAITTIME, roll out to tomorrow
-        if old_i == 0:
-            ref_file, cf = waitForImage("", WAITTIME, 0, "")
-            if ref_file == 1:
+        if n_images == 0:
+            ag_status, ref_file, current_field, current_filter = waitForImage("", WAITTIME, n_images, "")
+            if ag_status == ag_new_start:
                 print("Rolling back to tomorrow...")
                 token = getAmOrPm()
                 if token == 0:
                     tomorrow = 0
                 else:
                     tomorrow = 1
-                # reset projection dictionaries
-                ref_xproj = {}
-                ref_yproj = {}
+                # reset the reference images
                 ref_track = {}
                 continue
         else:
@@ -346,47 +500,53 @@ if __name__ == "__main__":
         # check we can access the reference file
         try:
             h = fits.open(ref_file)
+            # current field and filter?
+            current_filter = h[0].header[FILTER_KEYWORD]
+            current_field = h[0].header[FIELD_KEYWORD]
         except IOError:
             print("Problem opening REF: {}...".format(ref_file))
             print("Breaking back to the start for new reference image")
             continue
         print("Ref_File: {}".format(ref_file))
-        # filter?
-        cf = h[0].header[FILTER_KEYWORD]
-        ref_track[cf] = ref_file
+        ref_track[current_field][current_filter] = ref_file
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
         # now wait on new images
         while 1:
-            check_file, cf = waitForImage(ref_file.split('-')[0], WAITTIME, old_i, cf)
-            if check_file == 1:
-                print("Breaking back to first checks (i.e. tomorrow)")
+            ag_status, check_file, current_field, current_filter = waitForImage(current_field,
+                                                                                WAITTIME, n_images,
+                                                                                current_filter)
+            if ag_status == ag_new_start:
+                print("Breaking back to intial checks (i.e. assumed it is now tomorrow)...")
                 token = getAmOrPm()
                 if token == 1:
                     tomorrow = 0
                 else:
                     tomorrow = 1
-                # reset projection dictionaries
-                ref_xproj = {}
-                ref_yproj = {}
+                # reset the reference image tracker
                 ref_track = {}
                 break
-            elif check_file == 999:
-                print("New field detected, breaking back to reference image creator")
-                # reset projection dictionaries
-                ref_xproj = {}
-                ref_yproj = {}
-                ref_track = {}
-                break
-            elif check_file == 888:
-                print("New filter detected, looking for previous ref projections...")
+            elif ag_status == ag_new_field:
+                print("New field detected, looking for previous reference image...")
                 try:
-                    prod = ref_xproj[cf]
+                    ref_file = ref_track[current_field][current_filter]
+                    donuts_ref = Donuts(ref_file)
+                except KeyError:
+                    print('No reference for this field/filter, skipping back to reference creation...')
+                    break
+            elif ag_status == ag_new_filter:
+                print("New filter detected, looking for previous reference image...")
+                try:
+                    ref_file = ref_track[current_field][current_filter]
+                    donuts_ref = Donuts(ref_file)
                     continue
                 except KeyError:
-                    print("No reference projections for this filter, skipping to reference image creator")
+                    print("No reference for this field/filter, skipping back to reference creation")
                     break
-            print("REF: {} CHECK: {} [{}]".format(ref_track[cf], check_file, cf))
+            else:
+                print('Same field and filter:')
+                print("REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
+                                                      check_file, current_filter))
             try:
                 h2 = fits.open(check_file)
             except IOError:
@@ -428,5 +588,5 @@ if __name__ == "__main__":
                       culledy)
             # reset the comparison templist so the nested while(1) loop
             # can find new images
-            templist = g.glob(IMAGE_EXTENSION)
-            old_i = len(templist)
+            templist = g.glob("*{}".format(IMAGE_EXTENSION))
+            n_images = len(templist)
