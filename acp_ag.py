@@ -354,7 +354,6 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
 
     Returns
     -------
-                return ag_no_change, newest_image, newest_field, current_filter
     ag_status : int
         flag showing the current return status, see table above
     newest_image : string
@@ -404,19 +403,15 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
             newest_field = h[0].header[FIELD_KEYWORD]
             # new start? if so, return the first new image
             if current_field == "" and current_filter == "":
-                print("New start...")
                 return ag_new_start, newest_image, newest_field, newest_filter
             # check that the field is the same
             if current_field != "" and current_field != newest_field:
-                print("New field detected...")
                 return ag_new_field, newest_image, newest_field, newest_filter
             # check that the field is the same but filter has changed
             if current_field != "" and current_field == newest_field and current_filter != newest_filter:
-                print("Same field but different filter, changing ref image...")
                 return ag_new_filter, newest_image, newest_field, newest_filter
             # check the field and filters are the same
             if current_field != "" and current_field == newest_field and current_filter == newest_filter:
-                print("Same field and same filter, continuing...")
                 return ag_no_change, newest_image, newest_field, newest_filter
 
 if __name__ == "__main__":
@@ -524,6 +519,7 @@ if __name__ == "__main__":
                                                                                 WAITTIME, n_images,
                                                                                 current_filter)
             if ag_status == ag_new_start:
+                print("New start...")
                 print("Breaking back to intial checks (i.e. assumed it is now tomorrow)...")
                 token = getAmOrPm()
                 if token == 1:
@@ -551,7 +547,7 @@ if __name__ == "__main__":
                     print("No reference for this field/filter, skipping back to reference creation")
                     break
             else:
-                print('Same field and filter:')
+                print("Same field and same filter, continuing...")
                 print("REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
                                                       check_file, current_filter))
             try:
