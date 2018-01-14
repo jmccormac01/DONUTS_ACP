@@ -13,6 +13,9 @@ FIELD_KEYWORD = 'OBJECT'
 # RA axis alignment along x or y?
 RA_AXIS = 'x'
 
+# imager position angle
+CAMERA_ANGLE = 1.2
+
 # guider log file name
 LOGFILE = "guider.log"
 

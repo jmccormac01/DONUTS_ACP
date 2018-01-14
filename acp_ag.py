@@ -411,6 +411,31 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
             if current_field != "" and current_field == newest_field and current_filter == newest_filter:
                 return ag_no_change, newest_image, newest_field, newest_filter
 
+def rotateAxes(x, y, theta):
+    """
+    Take a correction in X and Y and rotate it
+    by the known position angle of the camera
+
+    This function accounts for non-orthogonalty
+    between a camera's X/Y axes and the RA/Dec
+    axes of the sky
+
+    x' = x*cos(theta) + y*sin(theta)
+    y' = -x*sin(theta) + y*cos(theta)
+
+    Paramaeters
+    -----------
+
+    Returns
+    -------
+
+    Raises
+    ------
+    """
+    x_new = x*math.cos(math.radians(theta))) + y*math.sin(math.radians(theta))
+    y_new = -x*math.sin(math.radians(theta))) + y*math.cos(math.radians(theta))
+    return x_new, y_new
+
 if __name__ == "__main__":
     # read the command line args
     args = argParse()

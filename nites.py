@@ -13,6 +13,9 @@ FIELD_KEYWORD = 'OBJECT'
 # RA axis alignment along x or y?
 RA_AXIS = 'y'
 
+# imager position angle
+CAMERA_ANGLE = 0.0
+
 # guider log file name
 LOGFILE = "guider.log"
 
@@ -26,7 +29,10 @@ SIGMA_BUFFER = 5
 WAITTIME = 21600
 
 # pulseGuide conversions
-PIX2TIME = {'x': 100.00, 'y': 100}
+PIX2TIME = {'+x': 100.00,
+            '-x': 100.00,
+            '+y': 100.00,
+            '-y': 100.00}
 
 # guide directions
 DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
