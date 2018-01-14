@@ -381,9 +381,6 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
         if len(t) == n_images:
             timeout = timeout + 0.2
             time.sleep(0.2)
-            if timeout % 5 == 0:
-                print("[{}/{}:{} - {}] No new images...".format(timeout, timeout_limit, n_images,
-                                                                strtime(datetime.utcnow())))
             if timeout > timeout_limit:
                 print("No new images in {} min, exiting...".format(int(timeout_limit/60.)))
                 return ag_timeout, newest_image, None, None
@@ -397,7 +394,7 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
             try:
                 h = fits.open(newest_image)
             except IOError:
-                print("Problem opening {0:s}...".format(newest_image))
+                print("Problem opening {}...".format(newest_image))
                 continue
             newest_filter = h[0].header[FILTER_KEYWORD]
             newest_field = h[0].header[FIELD_KEYWORD]
