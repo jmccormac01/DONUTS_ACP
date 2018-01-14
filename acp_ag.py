@@ -214,7 +214,7 @@ def guide(x, y):
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
-            time.sleep(0.10)
+            time.sleep(0.05)
         if pidx > 0:
             guide_time_x = pidx * PIX2TIME['+x']
             if RA_AXIS == 'x':
@@ -226,7 +226,7 @@ def guide(x, y):
                 guide_time_x = guide_time_x/cos_dec
             myScope.PulseGuide(DIRECTIONS['-x'], guide_time_x)
         while myScope.IsPulseGuiding == 'True':
-            time.sleep(0.10)
+            time.sleep(0.05)
         print("Guide correction Applied")
         success = True
         # store the original values in the buffer
@@ -377,10 +377,10 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
         except ValueError:
             newest_image = 'xxx.fts'
             newest_field = "xxx"
-        # check for no images or Tabby
+        # check for no images
         if len(t) == n_images:
-            timeout = timeout + 1
-            time.sleep(1)
+            timeout = timeout + 0.2
+            time.sleep(0.2)
             if timeout % 5 == 0:
                 print("[{}/{}:{} - {}] No new images...".format(timeout, timeout_limit, n_images,
                                                                 strtime(datetime.utcnow())))
@@ -388,11 +388,11 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
                 print("No new images in {} min, exiting...".format(int(timeout_limit/60.)))
                 return ag_timeout, newest_image, None, None
             continue
-        # check for new images and not Tabby
+        # check for new images
         if len(t) > n_images:
             timeout = 0
             # check for latest image - wait to be sure it's on disk
-            time.sleep(1)
+            #time.sleep(1)
             # check what filter
             try:
                 h = fits.open(newest_image)
