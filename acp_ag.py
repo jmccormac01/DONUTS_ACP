@@ -457,7 +457,10 @@ if __name__ == "__main__":
     # multiple day loop
     while 1:
         # check the telescope to sure make it's ready to go
-        connected, can, site = scopeCheck("full")
+        if not args.debug:
+            connected, can, site = scopeCheck("full")
+        else:
+            connected = True
         # run in daemon mode, looking for tonight's directory
         data_loc = 1
         sleep_time = 10
@@ -465,7 +468,10 @@ if __name__ == "__main__":
         while data_loc == 1:
             time.sleep(sleep_time)
             data_loc = getDataDir(tomorrow)
-            connected, can, site = scopeCheck("simple")
+            if not args.debug:
+                connected, can, site = scopeCheck("simple")
+            else:
+                connected = True
             if connected and data_loc != 1:
                 print("Found data directory: {}".format(data_loc))
                 os.chdir(data_loc)
