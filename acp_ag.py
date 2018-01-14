@@ -195,7 +195,7 @@ def guide(x, y):
         else:
             if abs(x) > SIGMA_BUFFER * np.std(BUFF_X) or abs(y) > SIGMA_BUFFER * np.std(BUFF_Y):
                 print('Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
-                return 0
+                return True
             else:
                 pass
         # update the PID controllers, run them in parallel
