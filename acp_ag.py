@@ -19,6 +19,7 @@ from datetime import (
     datetime)
 from math import (
     radians,
+    sin,
     cos)
 from collections import defaultdict
 import argparse as ap
@@ -32,6 +33,9 @@ from donuts import Donuts
 # pylint: disable = invalid-name
 # pylint: disable = redefined-outer-name
 # pylint: disable = line-too-long
+# pylint: disable = no-member
+
+# TODO : Test the rotation of ccd axes
 
 # autoguider status flags
 ag_timeout, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
@@ -328,11 +332,10 @@ def getDataDir(tomorrow):
     data_loc = "%s\\%s" % (BASE_DIR, x)
     if os.path.exists(data_loc):
         return data_loc
-    else:
-        return 1
+    return 1
 
 # wait for the newest image
-def waitForImage(current_field, timeout_limit, n_images, current_filter):
+def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter):
     """
     Wait for new images. Several things can happen:
         0. No new images come before timeout time, night is over
@@ -345,7 +348,7 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
     ----------
     current_field : string
         name of the current target
-    timeout_limit : int
+    timeout_limit_seconds : int
         timeout in seconds before giving up for the night
     n_images : int
         number of images previously acquired
@@ -367,37 +370,28 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
     ------
     None
     """
-    timeout = 0
-    while 1:
+    tnow = datetime.utcnow()
+    timeout_time = tnow + timedelta(seconds=timeout_limit_seconds)
+    while tnow < timeout_time:
         t = g.glob('*{}'.format(IMAGE_EXTENSION))
-        # get newest image
-        try:
-            newest_image = max(t, key=os.path.getctime)
-            newest_field = fits.open(newest_image)[0].header[FIELD_KEYWORD]
-        except ValueError:
-            newest_image = 'xxx.fts'
-            newest_field = "xxx"
-        # check for no images
-        if len(t) == n_images:
-            timeout = timeout + 0.2
-            time.sleep(0.2)
-            if timeout > timeout_limit:
-                print("No new images in {} min, exiting...".format(int(timeout_limit/60.)))
-                return ag_timeout, newest_image, None, None
-            continue
         # check for new images
         if len(t) > n_images:
-            timeout = 0
-            # check for latest image - wait to be sure it's on disk
-            #time.sleep(1)
-            # check what filter
+            # get newest image
             try:
-                h = fits.open(newest_image)
-            except IOError:
-                print("Problem opening {}...".format(newest_image))
+                newest_image = max(t, key=os.path.getctime)
+            except ValueError:
+                # if the intial list is empty, just cycle back and try again
                 continue
-            newest_filter = h[0].header[FILTER_KEYWORD]
-            newest_field = h[0].header[FIELD_KEYWORD]
+            # open the newest image and check the field and filter
+            try:
+                with fits.open(newest_image) as fitsfile:
+                    newest_filter = fitsfile[0].header[FILTER_KEYWORD]
+                    newest_field = fitsfile[0].header[FIELD_KEYWORD]
+            except FileNotFoundError:
+                # if the file cannot be accessed (not completely written to disc yet
+                # cycle back and try again
+                print('Problem accessing fits file {}, skipping...'.format(newest_image))
+                continue
             # new start? if so, return the first new image
             if current_field == "" and current_filter == "":
                 return ag_new_start, newest_image, newest_field, newest_filter
@@ -410,6 +404,11 @@ def waitForImage(current_field, timeout_limit, n_images, current_filter):
             # check the field and filters are the same
             if current_field != "" and current_field == newest_field and current_filter == newest_filter:
                 return ag_no_change, newest_image, newest_field, newest_filter
+        # if no new images, wait for a bit
+        else:
+            time.sleep(0.1)
+    print("No new images in {} min, exiting...".format(int(timeout_limit_seconds/60.)))
+    return ag_timeout, newest_image, None, None
 
 def rotateAxes(x, y, theta):
     """
@@ -432,8 +431,8 @@ def rotateAxes(x, y, theta):
     Raises
     ------
     """
-    x_new = x*math.cos(math.radians(theta))) + y*math.sin(math.radians(theta))
-    y_new = -x*math.sin(math.radians(theta))) + y*math.cos(math.radians(theta))
+    x_new = x*cos(radians(theta)) + y*sin(radians(theta))
+    y_new = -x*sin(radians(theta)) + y*cos(radians(theta))
     return x_new, y_new
 
 if __name__ == "__main__":
