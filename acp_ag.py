@@ -20,6 +20,7 @@ from datetime import (
 from math import (
     radians,
     cos)
+from collections import defaultdict
 import argparse as ap
 import glob as g
 import numpy as np
@@ -452,7 +453,7 @@ if __name__ == "__main__":
     # used to determine when a night is classified as over
     tomorrow = 0
     # dictionaries to hold reference images for different fields/filters
-    ref_track = {}
+    ref_track = defaultdict(dict)
     # multiple day loop
     while 1:
         # check the telescope to sure make it's ready to go
@@ -493,7 +494,7 @@ if __name__ == "__main__":
                 else:
                     tomorrow = 1
                 # reset the reference images
-                ref_track = {}
+                ref_track = defaultdict(dict)
                 continue
         else:
             ref_file = max(templist, key=os.path.getctime)
@@ -524,7 +525,7 @@ if __name__ == "__main__":
                 else:
                     tomorrow = 1
                 # reset the reference image tracker
-                ref_track = {}
+                ref_track = defaultdict(dict)
                 break
             elif ag_status == ag_new_field:
                 print("New field detected, looking for previous reference image...")
