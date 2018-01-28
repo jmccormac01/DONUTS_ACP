@@ -13,10 +13,12 @@ $> git clone url/for/ag/code
 
 Add and configure an instrument specific configuration file.
 
-# Usage
+# SPECULOOS Usage
 
 ```sh
-$> python acp_ag.py INSTRUMENT [--debug]
+$> Open Anaconda Prompt
+$> cd C:\Users\speculoos\Documents\GitHub\DONUTS_ACP\
+$> python acp_ag.py speculoos [--debug]
 ```
 
 # Contributors
