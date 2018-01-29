@@ -23,7 +23,7 @@ LOGFILE = "guider.log"
 GUIDE_BUFFER_LENGTH = 20
 
 # outlier rejection sigma
-SIGMA_BUFFER = 5
+SIGMA_BUFFER = 10
 
 # wait time (s)
 WAITTIME = 21600
