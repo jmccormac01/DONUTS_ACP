@@ -176,6 +176,14 @@ def guide(x, y):
     -------
     success : boolean
         Was the correction applied successfully?
+    pidx : float
+        X correction actually sent to the mount, post PID
+    pidy : float
+        Y correction actually sent to the mount, post PID
+    sigma_x : float
+        Stddev of X buffer
+    sigma_y : float
+        Stddev of Y buffer
 
     Raises
     ------
@@ -197,54 +205,60 @@ def guide(x, y):
         if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
             print('Filling AG stats buffer...')
         else:
-            if abs(x) > SIGMA_BUFFER * np.std(BUFF_X) or abs(y) > SIGMA_BUFFER * np.std(BUFF_Y):
+            sigma_x = np.std(BUFF_X)
+            sigma_y = np.std(BUFF_Y)
+            if abs(x) > SIGMA_BUFFER * sigma_x or abs(y) > SIGMA_BUFFER * sigma_y:
                 print('Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
-                return True
+                # store the original values in the buffer, even if correction
+                # was too big, this will allow small outliers to be caught
+                BUFF_X.append(x)
+                BUFF_Y.append(y)
+                return True, 0.0, 0.0, sigma_x, sigma_y
             else:
                 pass
         # update the PID controllers, run them in parallel
         pidx = PIDx.update(x) * -1
         pidy = PIDy.update(y) * -1
         print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
+        # make another check that the post PID values are not > Max allowed
         # abs() on -ve duration otherwise throws back an error
-        if pidy > 0:
+        if pidy > 0 and pidy < MAX_ERROR_PIXELS:
             guide_time_y = pidy * PIX2TIME['+y']
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['+y'], guide_time_y)
-        if pidy < 0:
+        if pidy < 0 and pidy > -MAX_ERROR_PIXELS:
             guide_time_y = abs(pidy * PIX2TIME['-y'])
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
-            time.sleep(0.05)
-        if pidx > 0:
+            time.sleep(0.01)
+        if pidx > 0 and pidx < MAX_ERROR_PIXELS:
             guide_time_x = pidx * PIX2TIME['+x']
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
             myScope.PulseGuide(DIRECTIONS['+x'], guide_time_x)
-        if pidx < 0:
+        if pidx < 0 and pidx > -MAX_ERROR_PIXELS:
             guide_time_x = abs(pidx * PIX2TIME['-x'])
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
             myScope.PulseGuide(DIRECTIONS['-x'], guide_time_x)
         while myScope.IsPulseGuiding == 'True':
-            time.sleep(0.05)
+            time.sleep(0.01)
         print("Guide correction Applied")
-        success = True
         # store the original values in the buffer
         BUFF_X.append(x)
         BUFF_Y.append(y)
+        return True, pidx, pidy, sigma_x, sigma_y
     else:
         print("Telescope NOT connected!")
         print("Please connect Telescope via ACP!")
         print("Ignoring corrections!")
-        success = False
-    return success
+        return False, 0.0, 0.0, 0.0, 0.0
 
 # log guide corrections
-def logShifts(logfile, ref, check, x, y, cx, cy):
+def logShifts(logfile, loglist, header=False):
     """
     Log the guide corrections to disc. This log is
     typically located with the data files for each night
@@ -253,18 +267,35 @@ def logShifts(logfile, ref, check, x, y, cx, cy):
     ----------
     logfile : string
         Path to the logfile
-    ref : str
-        Name of the current reference image
-    check : string
-        Name of the current guide image
-    x : float
-        Guide correction in X direction
-    y : float
-        Guide correction in Y direction
-    cx : string
-        Culled X measurement? y | n
-    cy : string
-        Culled Y measurement? y | n
+    log_list : array like
+        List of items to log, see order of items below:
+        ref : str
+            Name of the current reference image
+        check : string
+            Name of the current guide image
+        solution_x : float
+            Shift measured in X direction
+        solution_y : float
+            Shift measured in Y direction
+        x_to_send : float
+            X shift to send to PID (0.0 if soluition > max allowed shift)
+        y_to_send : float
+            Y shift to send to PID (0.0 if soluition > max allowed shift)
+        culled_max_shift_x : string
+            Culled X measurement if > max allowed shift (y | n)
+        culled_max_shift_y : string
+            Culled Y measurement if > max allowed shift (y | n)
+        x_applied : float
+            X correction sent to the mount, post PID loop
+        y_applied : float
+            Y correction sent to the mount, post PID loop
+        x_buff_std : float
+            Sttdev of X AG value buffer
+        y_buff_std : float
+            Sttdev of Y AG value buffer
+    header : boolean
+        Flag to set writing the log file header. This is done
+        at the start of the night only
 
     Returns
     -------
@@ -274,10 +305,12 @@ def logShifts(logfile, ref, check, x, y, cx, cy):
     ------
     None
     """
+    if header:
+        line = "Ref  Check  sol_x  sol_y  send_x  send_y  cull_x  cull_y  pid_x  pid_y  std_buff_x  std_buff_y"
+    else:
+        line = "  ".join(loglist)
     with open(logfile, "a") as outfile:
-        line = "[{}] {}\t{}\t{:.2f}\t{:.2f}\t{}\t{}\n".format(datetime.utcnow().isoformat(),
-                                                              ref, check, x, y, cx, cy)
-        outfile.write(line)
+        outfile.write("{}\n".format(line))
 
 # get evening or morning
 def getAmOrPm():
@@ -578,8 +611,8 @@ if __name__ == "__main__":
                 print("Breaking back to look for new file...")
                 continue
             # reset culled tags
-            culledx = 'n'
-            culledy = 'n'
+            culled_max_shift_x = 'n'
+            culled_max_shift_y = 'n'
             # work out shift here
             shift = donuts_ref.measure_shift(check_file)
             solution_x = shift.x.value
@@ -589,27 +622,37 @@ if __name__ == "__main__":
             # Check if shift great than max allowed error
             if solution_x > MAX_ERROR_PIXELS:
                 print("X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
-                solution_x = 0.0
-                culledx = 'y'
+                culled_max_shift_x = 'y'
             if solution_y > MAX_ERROR_PIXELS:
                 print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
-                solution_y = 0.0
-                culledy = 'y'
-            if not args.debug:
-                applied = guide(solution_x, solution_y)
-                if not applied:
-                    print("Breaking back to first checks (i.e. tomorrow)")
-                    token = getAmOrPm()
-                    if token == 1:
-                        tomorrow = 0
-                    else:
-                        tomorrow = 1
-                    break
-            if args.debug:
-                print("[SIM] Guide correction Applied")
-            logShifts(LOGFILE, ref_file, check_file,
-                      solution_x, solution_y, culledx,
-                      culledy)
+                culled_max_shift_y = 'y'
+            # if either axis is off by > MAX error then stop everything, no point guiding
+            # in 1 axis, need to figure out the source of the problem and run again
+            if culled_max_shift_x == 'y' or culled_max_shift_y == 'y':
+                x_applied, y_applied, x_buff_std, y_buff_std = 0.0, 0.0, 0.0, 0.0
+            else:
+                if not args.debug:
+                    applied, x_applied, y_applied, x_buff_std, y_buff_std = guide(solution_x, solution_y)
+                    if not applied:
+                        print("Breaking back to first checks (i.e. tomorrow)")
+                        token = getAmOrPm()
+                        if token == 1:
+                            tomorrow = 0
+                        else:
+                            tomorrow = 1
+                        break
+                if args.debug:
+                    print("[SIM] Guide correction Applied")
+            log_list = [ref_file, check_file,
+                        round(solution_x, 2),
+                        round(solution_y, 2),
+                        culled_max_shift_x,
+                        culled_max_shift_y,
+                        round(x_applied, 2),
+                        round(y_applied, 2),
+                        round(x_buff_std, 2),
+                        round(y_buff_std, 2)]
+            logShifts(LOGFILE, log_list)
             # reset the comparison templist so the nested while(1) loop
             # can find new images
             templist = g.glob("*{}".format(IMAGE_EXTENSION))
