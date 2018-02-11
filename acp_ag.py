@@ -536,6 +536,8 @@ if __name__ == "__main__":
         # and that the scope is connected
         # get a list of the images in the directory
         templist = g.glob('*{}'.format(IMAGE_EXTENSION))
+        # add the logfile header row
+        logShifts(LOGFILE, [], header=True)
         # check for any data in there
         n_images = len(templist)
         # if no reference images appear for WAITTIME, roll out to tomorrow
