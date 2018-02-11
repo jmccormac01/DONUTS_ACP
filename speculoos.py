@@ -48,3 +48,8 @@ PID_COEFFS = {'x': {'p': 0.6, 'i': 0.00, 'd': 0.0},
               'y': {'p': 0.6, 'i': 0.00, 'd': 0.0},
               'set_x': 0.0,
               'set_y': 0.0}
+
+# database set up
+DB_HOST = "localhost"
+DB_USER = "speculoos"
+DB_DATABASE = "spec_ops"

@@ -13,6 +13,7 @@ and --debug disables corrections being sent to the telescope
 import time
 import os
 import sys
+from contextlib import contextmanager
 from datetime import (
     date,
     timedelta,
@@ -26,6 +27,7 @@ import argparse as ap
 import glob as g
 import numpy as np
 import win32com.client
+import pymysql
 from astropy.io import fits
 from PID import PID
 from donuts import Donuts
@@ -257,8 +259,8 @@ def guide(x, y):
         print("Ignoring corrections!")
         return False, 0.0, 0.0, 0.0, 0.0
 
-# log guide corrections
-def logShifts(logfile, loglist, header=False):
+# log guide corrections to file
+def logShiftsToFile(logfile, loglist, header=False):
     """
     Log the guide corrections to disc. This log is
     typically located with the data files for each night
@@ -277,21 +279,17 @@ def logShifts(logfile, loglist, header=False):
             Shift measured in X direction
         solution_y : float
             Shift measured in Y direction
-        x_to_send : float
-            X shift to send to PID (0.0 if soluition > max allowed shift)
-        y_to_send : float
-            Y shift to send to PID (0.0 if soluition > max allowed shift)
         culled_max_shift_x : string
             Culled X measurement if > max allowed shift (y | n)
         culled_max_shift_y : string
             Culled Y measurement if > max allowed shift (y | n)
-        x_applied : float
+        pid_X : float
             X correction sent to the mount, post PID loop
-        y_applied : float
+        pid_y : float
             Y correction sent to the mount, post PID loop
-        x_buff_std : float
+        std_buff_x : float
             Sttdev of X AG value buffer
-        y_buff_std : float
+        std_buff_y : float
             Sttdev of Y AG value buffer
     header : boolean
         Flag to set writing the log file header. This is done
@@ -306,11 +304,67 @@ def logShifts(logfile, loglist, header=False):
     None
     """
     if header:
-        line = "Ref  Check  sol_x  sol_y  send_x  send_y  cull_x  cull_y  pid_x  pid_y  std_buff_x  std_buff_y"
+        line = "Ref  Check  sol_x  sol_y  cull_x  cull_y  pid_x  pid_y  std_buff_x  std_buff_y"
     else:
         line = "  ".join(loglist)
     with open(logfile, "a") as outfile:
         outfile.write("{}\n".format(line))
+
+@contextmanager
+def openDB(host=DB_HOST, user=DB_USER, db=DB_DATABASE):
+    """
+    Open a connection to ops database
+
+    Parameters
+    ----------
+    host : string
+        Database hostname
+    user : string
+        Database username
+    db : string
+        Database name
+
+    Yields
+    -------
+    cur : pymysql.cursor
+        Cursor to interact with pymysql database
+
+    Raises
+    ------
+    None
+    """
+    with pymysql.connect(host=host, user=user, db=db) as cur:
+        yield cur
+
+def logShiftsToDb(qry_args):
+    """
+    Log the autguiding information to the database
+
+    Parameters
+    ----------
+    qry_args : array like
+        Tuple of items to log in the database.
+        See itemised list in logShiftsToFile docstring
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
+    """
+    qry = """
+        INSERT INTO autoguider_log
+        (reference, check, solution_x, solution_y,
+         culled_max_shift_x, culled_max_shift_y,
+         pid_x, pid_y, std_buff_x, std_buff_y)
+        VALUES
+        (%s, %s, %s, %s, %s,
+         %s, %s, %s, %s, %s)
+        """
+    with openDB() as cur:
+        cur.execute(qry, qry_args)
 
 # get evening or morning
 def getAmOrPm():
@@ -537,7 +591,7 @@ if __name__ == "__main__":
         # get a list of the images in the directory
         templist = g.glob('*{}'.format(IMAGE_EXTENSION))
         # add the logfile header row
-        logShifts(LOGFILE, [], header=True)
+        logShiftsToFile(LOGFILE, [], header=True)
         # check for any data in there
         n_images = len(templist)
         # if no reference images appear for WAITTIME, roll out to tomorrow
@@ -631,10 +685,10 @@ if __name__ == "__main__":
             # if either axis is off by > MAX error then stop everything, no point guiding
             # in 1 axis, need to figure out the source of the problem and run again
             if culled_max_shift_x == 'y' or culled_max_shift_y == 'y':
-                x_applied, y_applied, x_buff_std, y_buff_std = 0.0, 0.0, 0.0, 0.0
+                pid_x, pid_y, std_buff_x, std_buff_y = 0.0, 0.0, 0.0, 0.0
             else:
                 if not args.debug:
-                    applied, x_applied, y_applied, x_buff_std, y_buff_std = guide(solution_x, solution_y)
+                    applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y)
                     if not applied:
                         print("Breaking back to first checks (i.e. tomorrow)")
                         token = getAmOrPm()
@@ -650,11 +704,14 @@ if __name__ == "__main__":
                         round(solution_y, 2),
                         culled_max_shift_x,
                         culled_max_shift_y,
-                        round(x_applied, 2),
-                        round(y_applied, 2),
-                        round(x_buff_std, 2),
-                        round(y_buff_std, 2)]
-            logShifts(LOGFILE, log_list)
+                        round(pid_x, 2),
+                        round(pid_y, 2),
+                        round(std_buff_x, 2),
+                        round(std_buff_y, 2)]
+            # log info to file
+            logShiftsToFile(LOGFILE, log_list)
+            # log info to database - enable when DB is running
+            # logShiftsToDb(tuple(log_list))
             # reset the comparison templist so the nested while(1) loop
             # can find new images
             templist = g.glob("*{}".format(IMAGE_EXTENSION))

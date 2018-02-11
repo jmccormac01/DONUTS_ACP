@@ -48,3 +48,8 @@ PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
               'y': {'p': 1.0, 'i': 0.5, 'd': 0.0},
               'set_x': 0.0,
               'set_y': 0.0}
+
+# database set up
+DB_HOST = "localhost"
+DB_USER = "nites"
+DB_DATABASE = "nites_ops"
