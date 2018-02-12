@@ -53,3 +53,4 @@ PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
 DB_HOST = "localhost"
 DB_USER = "nites"
 DB_DATABASE = "nites_ops"
+DB_PASS = "nites"

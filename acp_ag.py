@@ -311,7 +311,7 @@ def logShiftsToFile(logfile, loglist, header=False):
         outfile.write("{}\n".format(line))
 
 @contextmanager
-def openDB(host=DB_HOST, user=DB_USER, db=DB_DATABASE):
+def openDB(host=DB_HOST, user=DB_USER, db=DB_DATABASE, passwd=DB_PASS):
     """
     Open a connection to ops database
 
@@ -333,7 +333,8 @@ def openDB(host=DB_HOST, user=DB_USER, db=DB_DATABASE):
     ------
     None
     """
-    with pymysql.connect(host=host, user=user, db=db) as cur:
+    with pymysql.connect(host=host, user=user,
+                         db=db, password=passwd) as cur:
         yield cur
 
 def logShiftsToDb(qry_args):
@@ -711,7 +712,7 @@ if __name__ == "__main__":
             # log info to file
             logShiftsToFile(LOGFILE, log_list)
             # log info to database - enable when DB is running
-            # logShiftsToDb(tuple(log_list))
+             logShiftsToDb(tuple(log_list))
             # reset the comparison templist so the nested while(1) loop
             # can find new images
             templist = g.glob("*{}".format(IMAGE_EXTENSION))
