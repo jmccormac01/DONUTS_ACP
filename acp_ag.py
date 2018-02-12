@@ -356,7 +356,7 @@ def logShiftsToDb(qry_args):
     """
     qry = """
         INSERT INTO autoguider_log
-        (reference, check, solution_x, solution_y,
+        (reference, comparison, solution_x, solution_y,
          culled_max_shift_x, culled_max_shift_y,
          pid_x, pid_y, std_buff_x, std_buff_y)
         VALUES
