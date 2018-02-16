@@ -206,6 +206,8 @@ def guide(x, y):
         # kill anything that is > sigma_buffer sigma buffer stats
         if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
             print('Filling AG stats buffer...')
+            sigma_x = 0.0
+            sigma_y = 0.0
         else:
             sigma_x = np.std(BUFF_X)
             sigma_y = np.std(BUFF_Y)
