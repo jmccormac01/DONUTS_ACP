@@ -712,7 +712,7 @@ if __name__ == "__main__":
             # log info to file
             logShiftsToFile(LOGFILE, log_list)
             # log info to database - enable when DB is running
-             logShiftsToDb(tuple(log_list))
+            logShiftsToDb(tuple(log_list))
             # reset the comparison templist so the nested while(1) loop
             # can find new images
             templist = g.glob("*{}".format(IMAGE_EXTENSION))
