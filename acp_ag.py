@@ -67,6 +67,9 @@ def argParse():
     p.add_argument("--debug",
                    help="runs the script without applying corrections",
                    action="store_true")
+    p.add_argument("--calb_pid",
+                   help="run auto PID calibration run",
+                   action='store_true')
     return p.parse_args()
 
 def strtime(dt):
@@ -526,6 +529,19 @@ def rotateAxes(x, y, theta):
     y_new = -x*sin(radians(theta)) + y*cos(radians(theta))
     return x_new, y_new
 
+def splitObjectIdIntoPidCoeffs(object_id):
+    """
+    Take the object name and pull out the coeff values
+
+    Name should have the format:
+        PXX.xx-IYY.yy-DZZ.zz
+    """
+    p, i, d = object_id.split('-')
+    p = round(float(p[1:]), 2)
+    i = round(float(i[1:]), 2)
+    d = round(float(d[1:]), 2)
+    return p, i, d
+
 if __name__ == "__main__":
     # read the command line args
     args = argParse()
@@ -535,11 +551,14 @@ if __name__ == "__main__":
         from speculoos import *
     else:
         sys.exit(1)
-    # initialise the PID controllers for X and Y
-    PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
-    PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
-    PIDx.setPoint(PID_COEFFS['set_x'])
-    PIDy.setPoint(PID_COEFFS['set_y'])
+    if not args.auto_pid:
+        # initialise the PID controllers for X and Y
+        PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+        PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+        PIDx.setPoint(PID_COEFFS['set_x'])
+        PIDy.setPoint(PID_COEFFS['set_y'])
+    else:
+        print('[AUTO PID]: Waiting on first image to read PID values from field name')
     # ag buffers
     BUFF_X, BUFF_Y = [], []
     # debugging mode?
@@ -613,6 +632,15 @@ if __name__ == "__main__":
                 continue
         else:
             ref_file = max(templist, key=os.path.getctime)
+            if args.auto_pid:
+                pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
+                # initialise the PID controllers for X and Y to new values
+                # based on the special image filename
+                print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
+                PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
+                PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
+                PIDx.setPoint(PID_COEFFS['set_x'])
+                PIDy.setPoint(PID_COEFFS['set_y'])
         # check we can access the reference file
         try:
             h = fits.open(ref_file)
