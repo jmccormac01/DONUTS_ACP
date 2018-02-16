@@ -311,7 +311,7 @@ def logShiftsToFile(logfile, loglist, header=False):
         outfile.write("{}\n".format(line))
 
 @contextmanager
-def openDB(host=DB_HOST, user=DB_USER, db=DB_DATABASE, passwd=DB_PASS):
+def openDB(host, user, db, passwd):
     """
     Open a connection to ops database
 
@@ -364,7 +364,7 @@ def logShiftsToDb(qry_args):
         (%s, %s, %s, %s, %s,
          %s, %s, %s, %s, %s)
         """
-    with openDB() as cur:
+    with openDB(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
 
 # get evening or morning
