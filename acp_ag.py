@@ -37,6 +37,7 @@ from donuts import Donuts
 # pylint: disable = line-too-long
 # pylint: disable = no-member
 
+# TODO : Add night column to database
 # TODO : Test the rotation of ccd axes
 
 # autoguider status flags
