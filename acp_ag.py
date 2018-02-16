@@ -703,14 +703,14 @@ if __name__ == "__main__":
                 if args.debug:
                     print("[SIM] Guide correction Applied")
             log_list = [ref_file, check_file,
-                        round(solution_x, 2),
-                        round(solution_y, 2),
+                        str(round(solution_x, 2)),
+                        str(round(solution_y, 2)),
                         culled_max_shift_x,
                         culled_max_shift_y,
-                        round(pid_x, 2),
-                        round(pid_y, 2),
-                        round(std_buff_x, 2),
-                        round(std_buff_y, 2)]
+                        str(round(pid_x, 2)),
+                        str(round(pid_y, 2)),
+                        str(round(std_buff_x, 2)),
+                        str(round(std_buff_y, 2))]
             # log info to file
             logShiftsToFile(LOGFILE, log_list)
             # log info to database - enable when DB is running
