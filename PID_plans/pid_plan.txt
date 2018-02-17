@@ -5,6 +5,7 @@
 ; script runs in 2h blocks tweaking P param.
 ; blocks are repeated for different I values
 #WAITUNTIL 1, 02/18/2018 00:30
+#BINNING 1
 #FILTER I+z
 ; I = 0.0
 #COUNT 100
