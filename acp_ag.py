@@ -67,7 +67,7 @@ def argParse():
     p.add_argument("--debug",
                    help="runs the script without applying corrections",
                    action="store_true")
-    p.add_argument("--calb_pid",
+    p.add_argument("--calib_pid",
                    help="run auto PID calibration run",
                    action='store_true')
     return p.parse_args()
@@ -551,7 +551,7 @@ if __name__ == "__main__":
         from speculoos import *
     else:
         sys.exit(1)
-    if not args.auto_pid:
+    if not args.calib_pid:
         # initialise the PID controllers for X and Y
         PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
         PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
@@ -632,7 +632,7 @@ if __name__ == "__main__":
                 continue
         else:
             ref_file = max(templist, key=os.path.getctime)
-            if args.auto_pid:
+            if args.calib_pid:
                 pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
                 # initialise the PID controllers for X and Y to new values
                 # based on the special image filename
