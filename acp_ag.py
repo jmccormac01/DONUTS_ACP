@@ -536,7 +536,10 @@ def splitObjectIdIntoPidCoeffs(object_id):
     Name should have the format:
         PXX.xx-IYY.yy-DZZ.zz
     """
-    p, i, d = object_id.split('-')
+    sp = object_id.split('-')
+    p = sp[0]
+    i = sp[1]
+    d = sp[2]
     p = round(float(p[1:]), 2)
     i = round(float(i[1:]), 2)
     d = round(float(d[1:]), 2)
@@ -632,7 +635,7 @@ if __name__ == "__main__":
                 continue
         else:
             ref_file = max(templist, key=os.path.getctime)
-            if args.calib_pid:
+            if args.calibb_pid:
                 pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
                 # initialise the PID controllers for X and Y to new values
                 # based on the special image filename
