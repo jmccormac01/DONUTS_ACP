@@ -535,14 +535,20 @@ def splitObjectIdIntoPidCoeffs(object_id):
 
     Name should have the format:
         PXX.xx-IYY.yy-DZZ.zz
+
+    If not, None is returned and this will force the
+    PID coeffs back to the configured value
     """
     sp = object_id.split('-')
-    p = sp[0]
-    i = sp[1]
-    d = sp[2]
-    p = round(float(p[1:]), 2)
-    i = round(float(i[1:]), 2)
-    d = round(float(d[1:]), 2)
+    if sp[0].startswith('P') and sp[1].startswith('I') and sp[2].startswith('D'):
+        p = sp[0]
+        i = sp[1]
+        d = sp[2]
+        p = round(float(p[1:]), 2)
+        i = round(float(i[1:]), 2)
+        d = round(float(d[1:]), 2)
+    else:
+        p, i, d = None, None, None
     return p, i, d
 
 if __name__ == "__main__":
@@ -637,11 +643,22 @@ if __name__ == "__main__":
             ref_file = max(templist, key=os.path.getctime)
             if args.calib_pid:
                 pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
-                # initialise the PID controllers for X and Y to new values
-                # based on the special image filename
-                print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
-                PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
-                PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
+                # revert to configured values if not PID test data
+                if not pid_set_p:
+                    PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+                    PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+                    print('Reverting PID: Px={} Ix={} Dx={}'.format(PID_COEFFS['x']['p'],
+                                                                    PID_COEFFS['x']['i'],
+                                                                    PID_COEFFS['x']['d']))
+                    print('Reverting PID: Py={} Iy={} Dy={}'.format(PID_COEFFS['y']['p'],
+                                                                    PID_COEFFS['y']['i'],
+                                                                    PID_COEFFS['y']['d']))
+                else:
+                    # initialise the PID controllers for X and Y to new values
+                    # based on the special image filename
+                    print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
+                    PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
+                    PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
                 PIDx.setPoint(PID_COEFFS['set_x'])
                 PIDy.setPoint(PID_COEFFS['set_y'])
         # check we can access the reference file
