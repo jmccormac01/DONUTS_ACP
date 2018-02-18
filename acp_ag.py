@@ -635,7 +635,7 @@ if __name__ == "__main__":
                 continue
         else:
             ref_file = max(templist, key=os.path.getctime)
-            if args.calibb_pid:
+            if args.calib_pid:
                 pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
                 # initialise the PID controllers for X and Y to new values
                 # based on the special image filename
