@@ -37,7 +37,6 @@ from donuts import Donuts
 # pylint: disable = line-too-long
 # pylint: disable = no-member
 
-# TODO : Add night column to database
 # TODO : Test the rotation of ccd axes
 
 # autoguider status flags
@@ -317,7 +316,7 @@ def logShiftsToFile(logfile, loglist, header=False):
         outfile.write("{}\n".format(line))
 
 @contextmanager
-def openDB(host, user, db, passwd):
+def openDb(host, user, db, passwd):
     """
     Open a connection to ops database
 
@@ -370,7 +369,7 @@ def logShiftsToDb(qry_args):
         (%s, %s, %s, %s, %s,
          %s, %s, %s, %s, %s)
         """
-    with openDB(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
+    with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
 
 # get evening or morning
@@ -400,14 +399,13 @@ def getAmOrPm():
     return token
 
 # get tonights directory
-def getDataDir(tomorrow):
+def getDataDir():
     """
     Get tonight's data directory
 
     Parameters
     ----------
-    tomorrow : int
-        Number of days since daemon started
+    None
 
     Returns
     -------
@@ -419,14 +417,13 @@ def getDataDir(tomorrow):
     None
     """
     token = getAmOrPm()
-    if token > 0 and tomorrow > 0:
-        tomorrow = 0
-    d = date.today()-timedelta(days=token)+timedelta(days=tomorrow)
-    x = "%d%02d%02d" % (d.year, d.month, d.day)
-    data_loc = "%s\\%s" % (BASE_DIR, x)
+    d = date.today()-timedelta(days=token)
+    x = "{:d}{:02d}{:02d}".format(d.year, d.month, d.day)
+    data_loc = "{}\\{}".format(BASE_DIR, x)
     if os.path.exists(data_loc):
         return data_loc
-    return 1
+    else:
+        return None
 
 # wait for the newest image
 def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter):
@@ -516,7 +513,7 @@ def rotateAxes(x, y, theta):
     x' = x*cos(theta) + y*sin(theta)
     y' = -x*sin(theta) + y*cos(theta)
 
-    Paramaeters
+    Parameters
     -----------
 
     Returns
@@ -529,17 +526,35 @@ def rotateAxes(x, y, theta):
     y_new = -x*sin(radians(theta)) + y*cos(radians(theta))
     return x_new, y_new
 
-def splitObjectIdIntoPidCoeffs(object_id):
+def splitObjectIdIntoPidCoeffs(filename):
     """
-    Take the object name and pull out the coeff values
+    Take the special filename and pull out the coeff values
 
     Name should have the format:
         PXX.xx-IYY.yy-DZZ.zz
 
     If not, None is returned and this will force the
     PID coeffs back to the configured value
+
+    Parameters
+    ----------
+    filename : string
+        name of the file to extract PID coeffs from
+
+    Returns
+    -------
+    p : float
+        proportional coeff
+    i : float
+        integral coeff
+    d : float
+        derivative coeff
+
+    Raises
+    ------
+    None
     """
-    sp = object_id.split('-')
+    sp = os.path.split(filename)[1].split('-')
     if sp[0].startswith('P') and sp[1].startswith('I') and sp[2].startswith('D'):
         p = sp[0]
         i = sp[1]
@@ -551,6 +566,82 @@ def splitObjectIdIntoPidCoeffs(object_id):
         p, i, d = None, None, None
     return p, i, d
 
+def getReferenceImage(field, filt):
+    """
+    Look in the database for the current
+    field/filter reference image
+
+    Parameters
+    ----------
+    field : string
+        name of the current field
+    filt : string
+        name of the current filter
+
+    Returns
+    -------
+    ref_image : string
+        path to the reference image
+        returns None if no reference image found
+
+    Raises
+    ------
+    None
+    """
+    tnow = datetime.utcnow().isoformat().split('.')[0].replace('T', ' ')
+    qry = """
+        SELECT ref_image
+        FROM autoguider_ref
+        WHERE field = %s
+        AND filter = %s
+        AND valid_from < %s
+        AND valid_until IS NULL
+        """
+    qry_args = (field, filt, tnow)
+    with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
+        cur.execute(qry, qry_args)
+    result = cur.fetchone()
+    if len(result) == 1:
+        ref_image = "{}\\{}".format(AUTOGUIDER_REF_DIR, result[0])
+    else:
+        ref_image = None
+    return ref_image
+
+def setReferenceImage(field, filt, ref_image, telescope='Io'):
+    """
+    Set a new image as a reference in the database
+
+    Parameters
+    ----------
+    field : string
+        name of the current field
+    filt : string
+        name of the current filter
+    ref_image : string
+        name of the image to set as reference
+    telescope : string
+        name of the telescope
+
+    Returns
+    -------
+
+    Raises
+    ------
+    """
+    tnow = datetime.utcnow().isoformat().split('.')[0].replace('T', ' ')
+    qry = """
+        INSERT INTO autoguider_ref
+        (field, telescope, ref_image,
+         filter, valid_from)
+        VALUES
+        (%s, %s, %s, %s, %s)
+        """
+    qry_args = (field, telescope, ref_image, filt, tnow)
+    with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
+        cur.execute(qry, qry_args)
+    # copy the file to the autoguider_ref location
+    os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
+
 if __name__ == "__main__":
     # read the command line args
     args = argParse()
@@ -560,6 +651,8 @@ if __name__ == "__main__":
         from speculoos import *
     else:
         sys.exit(1)
+
+    # set the PID coeffs if we're not auto calibrating them
     if not args.calib_pid:
         # initialise the PID controllers for X and Y
         PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
@@ -568,8 +661,10 @@ if __name__ == "__main__":
         PIDy.setPoint(PID_COEFFS['set_y'])
     else:
         print('[AUTO PID]: Waiting on first image to read PID values from field name')
-    # ag buffers
+
+    # ag correction buffers - used for outlier rejection
     BUFF_X, BUFF_Y = [], []
+
     # debugging mode?
     if args.debug:
         print("\n**********************")
@@ -585,39 +680,39 @@ if __name__ == "__main__":
     else:
         print("Unknown status of DEBUG, exiting...")
         sys.exit(1)
-    # used to determine when a night is classified as over
-    tomorrow = 0
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
-    # multiple day loop
+
+    # outer loop to loop over field changes etc
+    # TODO: add handling of day changes when re-enabling daemon mode
     while 1:
         # check the telescope to sure make it's ready to go
         if not args.debug:
             connected, can, site = scopeCheck("full")
         else:
             connected = True
-        # run in daemon mode, looking for tonight's directory
-        data_loc = 1
+        # look for tonight's directory
+        data_loc = None
         sleep_time = 10
         # loop while waiting on data directory & scope to be connected
-        while data_loc == 1:
-            time.sleep(sleep_time)
-            data_loc = getDataDir(tomorrow)
+        while not data_loc:
+            data_loc = getDataDir()
             if not args.debug:
                 connected, can, site = scopeCheck("simple")
             else:
                 connected = True
-            if connected and data_loc != 1:
+            if connected and data_loc:
                 print("Found data directory: {}".format(data_loc))
                 os.chdir(data_loc)
                 break
             if not connected:
                 print("[{}] Scope not connected...".format(strtime(datetime.utcnow())))
-                data_loc = 1
-                sleep_time = 120
-                continue
-            print("[{}] No data directory yet...".format(strtime(datetime.utcnow())))
-            sleep_time = 120
+                sleep_time = 30
+            if not data_loc:
+                print("[{}] No data directory yet...".format(strtime(datetime.utcnow())))
+                sleep_time = 30
+            time.sleep(sleep_time)
+
         # if we get to here we assume we have found the data directory
         # and that the scope is connected
         # get a list of the images in the directory
@@ -626,78 +721,76 @@ if __name__ == "__main__":
         logShiftsToFile(LOGFILE, [], header=True)
         # check for any data in there
         n_images = len(templist)
-        # if no reference images appear for WAITTIME, roll out to tomorrow
+        # if no images appear for WAITTIME, then quit
+        # otherwise report the last_file in the directory
         if n_images == 0:
-            ag_status, ref_file, current_field, current_filter = waitForImage("", WAITTIME, n_images, "")
-            if ag_status == ag_new_start:
-                print("Rolling back to tomorrow...")
-                token = getAmOrPm()
-                if token == 0:
-                    tomorrow = 0
-                else:
-                    tomorrow = 1
-                # reset the reference images
-                ref_track = defaultdict(dict)
-                continue
+            ag_status, last_file, _, _ = waitForImage("", WAITTIME, n_images, "")
+            if ag_status == ag_timeout:
+                sys.exit()
         else:
-            ref_file = max(templist, key=os.path.getctime)
-            if args.calib_pid:
-                pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
-                # revert to configured values if not PID test data
-                if not pid_set_p:
-                    PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
-                    PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
-                    print('Reverting PID: Px={} Ix={} Dx={}'.format(PID_COEFFS['x']['p'],
-                                                                    PID_COEFFS['x']['i'],
-                                                                    PID_COEFFS['x']['d']))
-                    print('Reverting PID: Py={} Iy={} Dy={}'.format(PID_COEFFS['y']['p'],
-                                                                    PID_COEFFS['y']['i'],
-                                                                    PID_COEFFS['y']['d']))
-                else:
-                    # initialise the PID controllers for X and Y to new values
-                    # based on the special image filename
-                    print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
-                    PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
-                    PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
-                PIDx.setPoint(PID_COEFFS['set_x'])
-                PIDy.setPoint(PID_COEFFS['set_y'])
-        # check we can access the reference file
+            last_file = max(templist, key=os.path.getctime)
+
+        # check we can access the last file
         try:
-            h = fits.open(ref_file)
-            # current field and filter?
-            current_filter = h[0].header[FILTER_KEYWORD]
-            current_field = h[0].header[FIELD_KEYWORD]
+            with fits.open(last_file) as ff:
+                # current field and filter?
+                current_filter = ff[0].header[FILTER_KEYWORD]
+                current_field = ff[0].header[FIELD_KEYWORD]
+                # Look for a reference image for this field/filter
+                ref_file = getReferenceImage(current_field, current_filter)
+                # if there is no reference image, set this one as it and continue
+                # set the previous reference image
+                if not ref_file:
+                    setReferenceImage(current_field, current_filter, last_file)
+                    ref_file = "{}\\{}".format(AUTOGUIDER_REF_DIR, last_file)
         except IOError:
-            print("Problem opening REF: {}...".format(ref_file))
-            print("Breaking back to the start for new reference image")
+            print("Problem opening {}...".format(last_file))
+            print("Breaking back to check for new files...")
             continue
+
+        # check for auto PID run
+        if args.calib_pid:
+            pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
+            # revert to configured values if not PID test data
+            if not pid_set_p:
+                PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+                PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+                print('Reverting PID: Px={} Ix={} Dx={}'.format(PID_COEFFS['x']['p'],
+                                                                PID_COEFFS['x']['i'],
+                                                                PID_COEFFS['x']['d']))
+                print('Reverting PID: Py={} Iy={} Dy={}'.format(PID_COEFFS['y']['p'],
+                                                                PID_COEFFS['y']['i'],
+                                                                PID_COEFFS['y']['d']))
+            else:
+                # initialise the PID controllers for X and Y to new values
+                # based on the special image filename
+                print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
+                PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
+                PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
+            PIDx.setPoint(PID_COEFFS['set_x'])
+            PIDy.setPoint(PID_COEFFS['set_y'])
+
+        # finally, load up the reference file for this field/filter
         print("Ref_File: {}".format(ref_file))
         ref_track[current_field][current_filter] = ref_file
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
-        # now wait on new images
+
+        # Now wait on new images
         while 1:
             ag_status, check_file, current_field, current_filter = waitForImage(current_field,
                                                                                 WAITTIME, n_images,
                                                                                 current_filter)
-            if ag_status == ag_new_start:
-                print("New start...")
-                print("Breaking back to intial checks (i.e. assumed it is now tomorrow)...")
-                token = getAmOrPm()
-                if token == 1:
-                    tomorrow = 0
-                else:
-                    tomorrow = 1
-                # reset the reference image tracker
-                ref_track = defaultdict(dict)
-                break
+            if ag_status == ag_timeout:
+                sys.exit()
             elif ag_status == ag_new_field:
                 print("New field detected, looking for previous reference image...")
                 try:
                     ref_file = ref_track[current_field][current_filter]
                     donuts_ref = Donuts(ref_file)
                 except KeyError:
-                    print('No reference for this field/filter, skipping back to reference creation...')
+                    print('No reference in ref_track for this field/filter')
+                    print('Skipping back to reference image checks...')
                     break
             elif ag_status == ag_new_filter:
                 print("New filter detected, looking for previous reference image...")
@@ -706,7 +799,8 @@ if __name__ == "__main__":
                     donuts_ref = Donuts(ref_file)
                     continue
                 except KeyError:
-                    print("No reference for this field/filter, skipping back to reference creation")
+                    print('No reference in ref_track for this field/filter')
+                    print('Skipping back to reference image checks...')
                     break
             else:
                 print("Same field and same filter, continuing...")
@@ -741,15 +835,7 @@ if __name__ == "__main__":
             else:
                 if not args.debug:
                     applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y)
-                    if not applied:
-                        print("Breaking back to first checks (i.e. tomorrow)")
-                        token = getAmOrPm()
-                        if token == 1:
-                            tomorrow = 0
-                        else:
-                            tomorrow = 1
-                        break
-                if args.debug:
+                else:
                     print("[SIM] Guide correction Applied")
             log_list = [ref_file, check_file,
                         str(round(solution_x, 2)),
