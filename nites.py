@@ -42,6 +42,7 @@ MAX_ERROR_PIXELS = 20
 
 # ACP data base directory
 BASE_DIR = "C:\\data"
+AUTOGUIDER_REF_DIR = "C:\\data\\autoguider_ref"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},

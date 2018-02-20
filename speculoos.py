@@ -42,10 +42,11 @@ MAX_ERROR_PIXELS = 20
 
 # ACP data base directory
 BASE_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images"
+AUTOGUIDER_REF_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
 
 # PID loop coefficients
-PID_COEFFS = {'x': {'p': 0.5, 'i': 0.2, 'd': 0.0},
-              'y': {'p': 0.5, 'i': 0.2, 'd': 0.0},
+PID_COEFFS = {'x': {'p': 0.75, 'i': 0.05, 'd': 0.0},
+              'y': {'p': 0.50, 'i': 0.05, 'd': 0.0},
               'set_x': 0.0,
               'set_y': 0.0}
 
