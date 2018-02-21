@@ -601,10 +601,10 @@ def getReferenceImage(field, filt):
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
     result = cur.fetchone()
-    if len(result) == 1:
-        ref_image = "{}\\{}".format(AUTOGUIDER_REF_DIR, result[0])
-    else:
+    if not result:
         ref_image = None
+    else:
+        ref_image = "{}\\{}".format(AUTOGUIDER_REF_DIR, result[0])
     return ref_image
 
 def setReferenceImage(field, filt, ref_image, telescope='Io'):
