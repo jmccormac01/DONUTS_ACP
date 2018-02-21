@@ -825,10 +825,10 @@ if __name__ == "__main__":
             print("x shift: {:.2f}".format(float(solution_x)))
             print("y shift: {:.2f}".format(float(solution_y)))
             # Check if shift great than max allowed error
-            if solution_x > MAX_ERROR_PIXELS:
+            if abs(solution_x) > MAX_ERROR_PIXELS:
                 print("X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
                 culled_max_shift_x = 'y'
-            if solution_y > MAX_ERROR_PIXELS:
+            if abs(solution_y) > MAX_ERROR_PIXELS:
                 print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
                 culled_max_shift_y = 'y'
             # if either axis is off by > MAX error then stop everything, no point guiding
