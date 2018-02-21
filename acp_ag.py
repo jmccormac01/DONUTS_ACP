@@ -14,6 +14,7 @@ import time
 import os
 import sys
 from contextlib import contextmanager
+from shutil import copyfile
 from datetime import (
     date,
     timedelta,
@@ -640,7 +641,8 @@ def setReferenceImage(field, filt, ref_image, telescope='Io'):
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
     # copy the file to the autoguider_ref location
-    os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
+    #os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
+    copyfile(ref_image, "{}/{}".format(AUTOGUIDER_REF_DIR, ref_image))
 
 if __name__ == "__main__":
     # read the command line args
