@@ -4,7 +4,7 @@ ACP + DONUTS Autoguiding
 Usage:
     $> python acp_ag.py INSTRUMENT [--debug]
 
-where INSRTRUMENT can be:
+where INSTRUMENT can be:
     nites
     speculoos
 
@@ -812,6 +812,7 @@ if __name__ == "__main__":
                 print("Problem opening CHECK: {}...".format(check_file))
                 print("Breaking back to look for new file...")
                 continue
+
             # reset culled tags
             culled_max_shift_x = 'n'
             culled_max_shift_y = 'n'
@@ -837,7 +838,8 @@ if __name__ == "__main__":
                     applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y)
                 else:
                     print("[SIM] Guide correction Applied")
-            log_list = [ref_file, check_file,
+            log_list = [os.path.split(ref_file)[1],
+                        check_file,
                         str(round(solution_x, 2)),
                         str(round(solution_y, 2)),
                         culled_max_shift_x,
@@ -846,6 +848,7 @@ if __name__ == "__main__":
                         str(round(pid_y, 2)),
                         str(round(std_buff_x, 2)),
                         str(round(std_buff_y, 2))]
+
             # log info to file
             logShiftsToFile(LOGFILE, log_list)
             # log info to database - enable when DB is running
