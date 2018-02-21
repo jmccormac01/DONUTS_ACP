@@ -21,6 +21,10 @@ $> cd C:\Users\speculoos\Documents\GitHub\DONUTS_ACP\
 $> python acp_ag.py speculoos [--debug]
 ```
 
+# Schematic
+
+![Schematic](DONUTS_AG.png)
+
 # Contributors
 
 James McCormac
