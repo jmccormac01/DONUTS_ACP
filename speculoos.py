@@ -22,6 +22,9 @@ LOGFILE = "guider.log"
 # rejection buffer length
 GUIDE_BUFFER_LENGTH = 20
 
+# number images allowed during pull in period
+IMAGES_TO_STABILISE = 10
+
 # outlier rejection sigma
 SIGMA_BUFFER = 10
 

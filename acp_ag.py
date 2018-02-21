@@ -163,7 +163,7 @@ def scopeCheck(verbose):
     return connected, can, site
 
 # apply guide corrections
-def guide(x, y):
+def guide(x, y, images_to_stabilise):
     """
     Generic autoguiding command with built-in PID control loop
     guide() will track recent autoguider corrections and ignore
@@ -171,17 +171,26 @@ def guide(x, y):
     and scale conversions as per the telescope specific config
     file.
 
+    During the initial field stabilisation period the limits are
+    relaxed slightly and large pull in errors are not appended
+    to the steady state outlier rejection buffer
+
     Parameters
     ----------
     x : float
         Guide correction to make in X direction
     y : float
         Guide correction to make in Y direction
+    images_to_stabilise : int
+        Number of images before field is stabilised
+        If -ve, field has stabilised
+        If +ve allow for bigger shifts and do not append
+        ag values to buffers
 
     Returns
     -------
     success : boolean
-        Was the correction applied successfully?
+        was the correction applied? Proxy for telescope connected
     pidx : float
         X correction actually sent to the mount, post PID
     pidy : float
@@ -213,41 +222,60 @@ def guide(x, y):
             sigma_x = 0.0
             sigma_y = 0.0
         else:
-            sigma_x = np.std(BUFF_X)
-            sigma_y = np.std(BUFF_Y)
-            if abs(x) > SIGMA_BUFFER * sigma_x or abs(y) > SIGMA_BUFFER * sigma_y:
-                print('Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
-                # store the original values in the buffer, even if correction
-                # was too big, this will allow small outliers to be caught
-                BUFF_X.append(x)
-                BUFF_Y.append(y)
-                return True, 0.0, 0.0, sigma_x, sigma_y
+            if images_to_stabilise < 0:
+                sigma_x = np.std(BUFF_X)
+                sigma_y = np.std(BUFF_Y)
+                if abs(x) > SIGMA_BUFFER * sigma_x or abs(y) > SIGMA_BUFFER * sigma_y:
+                    print('Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
+                    # store the original values in the buffer, even if correction
+                    # was too big, this will allow small outliers to be caught
+                    BUFF_X.append(x)
+                    BUFF_Y.append(y)
+                    return True, 0.0, 0.0, sigma_x, sigma_y
+                else:
+                    pass
             else:
-                pass
+                print('Ignoring AG buffer during stabilisation')
+                sigma_x = 0.0
+                sigma_y = 0.0
+
         # update the PID controllers, run them in parallel
         pidx = PIDx.update(x) * -1
         pidy = PIDy.update(y) * -1
+
+        # check if we are stabilising and allow for the max shift
+        if images_to_stabilise > 0:
+            if pidx >= MAX_ERROR_PIXELS:
+                pidx = MAX_ERROR_PIXELS
+            elif pidx <= -MAX_ERROR_PIXELS:
+                pidx = -MAX_ERROR_PIXELS
+            if pidy >= MAX_ERROR_PIXELS:
+                pidy = MAX_ERROR_PIXELS
+            elif pidy <= -MAX_ERROR_PIXELS:
+                pidy = -MAX_ERROR_PIXELS
         print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
+
         # make another check that the post PID values are not > Max allowed
+        # using >= allows for the stabilising runs to get through
         # abs() on -ve duration otherwise throws back an error
-        if pidy > 0 and pidy < MAX_ERROR_PIXELS:
+        if pidy > 0 and pidy <= MAX_ERROR_PIXELS:
             guide_time_y = pidy * PIX2TIME['+y']
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['+y'], guide_time_y)
-        if pidy < 0 and pidy > -MAX_ERROR_PIXELS:
+        if pidy < 0 and pidy >= -MAX_ERROR_PIXELS:
             guide_time_y = abs(pidy * PIX2TIME['-y'])
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.01)
-        if pidx > 0 and pidx < MAX_ERROR_PIXELS:
+        if pidx > 0 and pidx <= MAX_ERROR_PIXELS:
             guide_time_x = pidx * PIX2TIME['+x']
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
             myScope.PulseGuide(DIRECTIONS['+x'], guide_time_x)
-        if pidx < 0 and pidx > -MAX_ERROR_PIXELS:
+        if pidx < 0 and pidx >= -MAX_ERROR_PIXELS:
             guide_time_x = abs(pidx * PIX2TIME['-x'])
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
@@ -256,8 +284,10 @@ def guide(x, y):
             time.sleep(0.01)
         print("Guide correction Applied")
         # store the original values in the buffer
-        BUFF_X.append(x)
-        BUFF_Y.append(y)
+        # only if we are not stabilising
+        if images_to_stabilise < 0:
+            BUFF_X.append(x)
+            BUFF_Y.append(y)
         return True, pidx, pidy, sigma_x, sigma_y
     else:
         print("Telescope NOT connected!")
@@ -777,6 +807,9 @@ if __name__ == "__main__":
         ref_track[current_field][current_filter] = ref_file
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
+        # number of images alloed during initial pull in
+        # -ve numbers mean ag should have stabilised
+        images_to_stabilise = IMAGES_TO_STABILISE
 
         # Now wait on new images
         while 1:
@@ -790,6 +823,7 @@ if __name__ == "__main__":
                 try:
                     ref_file = ref_track[current_field][current_filter]
                     donuts_ref = Donuts(ref_file)
+                    images_to_stabilise = IMAGES_TO_STABILISE
                 except KeyError:
                     print('No reference in ref_track for this field/filter')
                     print('Skipping back to reference image checks...')
@@ -799,6 +833,7 @@ if __name__ == "__main__":
                 try:
                     ref_file = ref_track[current_field][current_filter]
                     donuts_ref = Donuts(ref_file)
+                    images_to_stabilise = IMAGES_TO_STABILISE
                     continue
                 except KeyError:
                     print('No reference in ref_track for this field/filter')
@@ -808,6 +843,7 @@ if __name__ == "__main__":
                 print("Same field and same filter, continuing...")
                 print("REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
                                                       check_file, current_filter))
+                images_to_stabilise -= 1
             try:
                 h2 = fits.open(check_file)
             except IOError:
@@ -824,20 +860,34 @@ if __name__ == "__main__":
             solution_y = shift.y.value
             print("x shift: {:.2f}".format(float(solution_x)))
             print("y shift: {:.2f}".format(float(solution_y)))
-            # Check if shift great than max allowed error
-            if abs(solution_x) > MAX_ERROR_PIXELS:
-                print("X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
-                culled_max_shift_x = 'y'
-            if abs(solution_y) > MAX_ERROR_PIXELS:
-                print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
-                culled_max_shift_y = 'y'
+            # Check if shift great than max allowed error in post pull in state
+            if images_to_stabilise < 0:
+                if abs(solution_x) > MAX_ERROR_PIXELS:
+                    print("X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
+                    culled_max_shift_x = 'y'
+                if abs(solution_y) > MAX_ERROR_PIXELS:
+                    print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
+                    culled_max_shift_y = 'y'
+            else:
+                print('Allowing field to stabilise, imposing max error clip')
+                if solution_x > MAX_ERROR_PIXELS:
+                    solution_x = MAX_ERROR_PIXELS
+                elif solution_x < -MAX_ERROR_PIXELS:
+                    solution_x = -MAX_ERROR_PIXELS
+                if solution_y > MAX_ERROR_PIXELS:
+                    solution_y = MAX_ERROR_PIXELS
+                elif solution_y < -MAX_ERROR_PIXELS:
+                    solution_y = -MAX_ERROR_PIXELS
             # if either axis is off by > MAX error then stop everything, no point guiding
             # in 1 axis, need to figure out the source of the problem and run again
             if culled_max_shift_x == 'y' or culled_max_shift_y == 'y':
                 pid_x, pid_y, std_buff_x, std_buff_y = 0.0, 0.0, 0.0, 0.0
             else:
                 if not args.debug:
-                    applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y)
+                    applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y,
+                                                                          images_to_stabilise)
+                    if not applied:
+                        sys.exit(1)
                 else:
                     print("[SIM] Guide correction Applied")
             log_list = [os.path.split(ref_file)[1],
