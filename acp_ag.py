@@ -717,6 +717,7 @@ if __name__ == "__main__":
 
     # outer loop to loop over field changes etc
     # TODO: add handling of day changes when re-enabling daemon mode
+    # TODO: stop polling telecope, only poll for data and then run
     while 1:
         # check the telescope to sure make it's ready to go
         if not args.debug:
