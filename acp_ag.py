@@ -844,6 +844,13 @@ if __name__ == "__main__":
                 print("REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
                                                       check_file, current_filter))
                 images_to_stabilise -= 1
+                # if we are done stabilising, reset the PID loop
+                if images_to_stabilise == 0 and not args.calib_pid:
+                    print('Stabilisation complete, reseting PID loop...')
+                    PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+                    PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+                    PIDx.setPoint(PID_COEFFS['set_x'])
+                    PIDy.setPoint(PID_COEFFS['set_y'])
             try:
                 h2 = fits.open(check_file)
             except IOError:
