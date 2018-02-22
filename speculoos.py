@@ -48,8 +48,8 @@ BASE_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images"
 AUTOGUIDER_REF_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
 
 # PID loop coefficients
-PID_COEFFS = {'x': {'p': 0.75, 'i': 0.05, 'd': 0.0},
-              'y': {'p': 0.50, 'i': 0.05, 'd': 0.0},
+PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
+              'y': {'p': 0.50, 'i': 0.02, 'd': 0.0},
               'set_x': 0.0,
               'set_y': 0.0}
 
