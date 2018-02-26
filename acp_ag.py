@@ -39,9 +39,10 @@ from donuts import Donuts
 # pylint: disable = no-member
 
 # TODO : Test the rotation of ccd axes
+# TODO : Log the solution, sent_to_pid, post_pid corrections
 
 # autoguider status flags
-ag_timeout, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
+ag_new_day, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
 
 # get command line arguments
 def argParse():
@@ -67,9 +68,6 @@ def argParse():
     p.add_argument("--debug",
                    help="runs the script without applying corrections",
                    action="store_true")
-    p.add_argument("--calib_pid",
-                   help="run auto PID calibration run",
-                   action='store_true')
     return p.parse_args()
 
 def strtime(dt):
@@ -93,12 +91,14 @@ def strtime(dt):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 # check the telescope
-def scopeCheck(verbose):
+def scopeCheck(myScope, verbose):
     """
     Check the telescope and connect
 
     Parameters
     ----------
+    myScope : ACP.Telescope object
+        telescope object for control
     verbose : string
         Level of verbosity
 
@@ -216,13 +216,13 @@ def guide(x, y, images_to_stabilise):
         while len(BUFF_Y) > GUIDE_BUFFER_LENGTH:
             BUFF_Y.pop(0)
         assert len(BUFF_X) == len(BUFF_Y)
-        # kill anything that is > sigma_buffer sigma buffer stats
-        if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
-            print('Filling AG stats buffer...')
-            sigma_x = 0.0
-            sigma_y = 0.0
-        else:
-            if images_to_stabilise < 0:
+        if images_to_stabilise < 0:
+            # kill anything that is > sigma_buffer sigma buffer stats
+            if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
+                print('Filling AG stats buffer...')
+                sigma_x = 0.0
+                sigma_y = 0.0
+            else:
                 sigma_x = np.std(BUFF_X)
                 sigma_y = np.std(BUFF_Y)
                 if abs(x) > SIGMA_BUFFER * sigma_x or abs(y) > SIGMA_BUFFER * sigma_y:
@@ -234,10 +234,10 @@ def guide(x, y, images_to_stabilise):
                     return True, 0.0, 0.0, sigma_x, sigma_y
                 else:
                     pass
-            else:
-                print('Ignoring AG buffer during stabilisation')
-                sigma_x = 0.0
-                sigma_y = 0.0
+        else:
+            print('Ignoring AG buffer during stabilisation')
+            sigma_x = 0.0
+            sigma_y = 0.0
 
         # update the PID controllers, run them in parallel
         pidx = PIDx.update(x) * -1
@@ -245,14 +245,14 @@ def guide(x, y, images_to_stabilise):
 
         # check if we are stabilising and allow for the max shift
         if images_to_stabilise > 0:
-            if pidx >= MAX_ERROR_PIXELS:
-                pidx = MAX_ERROR_PIXELS
-            elif pidx <= -MAX_ERROR_PIXELS:
-                pidx = -MAX_ERROR_PIXELS
-            if pidy >= MAX_ERROR_PIXELS:
-                pidy = MAX_ERROR_PIXELS
-            elif pidy <= -MAX_ERROR_PIXELS:
-                pidy = -MAX_ERROR_PIXELS
+            if pidx >= MAX_ERROR_STABIL_PIXELS:
+                pidx = MAX_ERROR_STABIL_PIXELS
+            elif pidx <= -MAX_ERROR_STABIL_PIXELS:
+                pidx = -MAX_ERROR_STABIL_PIXELS
+            if pidy >= MAX_ERROR_STABIL_PIXELS:
+                pidy = MAX_ERROR_STABIL_PIXELS
+            elif pidy <= -MAX_ERROR_STABIL_PIXELS:
+                pidy = -MAX_ERROR_STABIL_PIXELS
         print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
 
         # make another check that the post PID values are not > Max allowed
@@ -457,10 +457,9 @@ def getDataDir():
         return None
 
 # wait for the newest image
-def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter):
+def waitForImage(current_field, n_images, current_filter, current_data_dir):
     """
     Wait for new images. Several things can happen:
-        0. No new images come before timeout time, night is over
         1. A new image comes in of new field and filter (new start)
         2. A new image comes in but of a new field (new field)
         3. A new image comes in but with a different filter (new filter)
@@ -470,12 +469,12 @@ def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter)
     ----------
     current_field : string
         name of the current target
-    timeout_limit_seconds : int
-        timeout in seconds before giving up for the night
     n_images : int
         number of images previously acquired
     current_filter : string
         name of the current filter
+    current_data_dir : string
+        path to current data directory
 
     Returns
     -------
@@ -492,11 +491,13 @@ def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter)
     ------
     None
     """
-    tnow = datetime.utcnow()
-    timeout_time = tnow + timedelta(seconds=timeout_limit_seconds)
-    while tnow < timeout_time:
-        t = g.glob('*{}'.format(IMAGE_EXTENSION))
+    while 1:
+        # check for new data directory, i.e. tomorrow
+        new_data_dir = getDataDir()
+        if new_data_dir != current_data_dir:
+            return ag_new_day, None, None, None
         # check for new images
+        t = g.glob('*{}'.format(IMAGE_EXTENSION))
         if len(t) > n_images:
             # get newest image
             try:
@@ -510,11 +511,11 @@ def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter)
                     newest_filter = fitsfile[0].header[FILTER_KEYWORD]
                     newest_field = fitsfile[0].header[FIELD_KEYWORD]
             except FileNotFoundError:
-                # if the file cannot be accessed (not completely written to disc yet
+                # if the file cannot be accessed (not completely written to disc yet)
                 # cycle back and try again
                 print('Problem accessing fits file {}, skipping...'.format(newest_image))
                 continue
-            # new start? if so, return the first new image
+            # new start? if so, return the newest image info
             if current_field == "" and current_filter == "":
                 return ag_new_start, newest_image, newest_field, newest_filter
             # check that the field is the same
@@ -529,8 +530,6 @@ def waitForImage(current_field, timeout_limit_seconds, n_images, current_filter)
         # if no new images, wait for a bit
         else:
             time.sleep(0.1)
-    print("No new images in {} min, exiting...".format(int(timeout_limit_seconds/60.)))
-    return ag_timeout, newest_image, None, None
 
 def rotateAxes(x, y, theta):
     """
@@ -684,67 +683,57 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
 
-    # set the PID coeffs if we're not auto calibrating them
-    if not args.calib_pid:
-        # initialise the PID controllers for X and Y
-        PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
-        PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
-        PIDx.setPoint(PID_COEFFS['set_x'])
-        PIDy.setPoint(PID_COEFFS['set_y'])
-    else:
-        print('[AUTO PID]: Waiting on first image to read PID values from field name')
-
-    # ag correction buffers - used for outlier rejection
-    BUFF_X, BUFF_Y = [], []
-
     # debugging mode?
     if args.debug:
         print("\n**********************")
         print("* DEBUGGING Mode ON! *")
         print("**********************\n")
-    # connect to ACP
-    if not args.debug:
-        print("Checking for the telescope...")
-        myScope = win32com.client.Dispatch("ACP.Telescope")
     elif args.debug:
         print("[SIM] Connecting to telescope...")
         time.sleep(3)
     else:
         print("Unknown status of DEBUG, exiting...")
         sys.exit(1)
+
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
 
-    # outer loop to loop over field changes etc
+    # outer loop to loop over field and night changes etc
     # TODO: add handling of day changes when re-enabling daemon mode
     # TODO: stop polling telecope, only poll for data and then run
     while 1:
-        # check the telescope to sure make it's ready to go
-        if not args.debug:
-            connected, can, site = scopeCheck("full")
-        else:
-            connected = True
+        # initialise the PID controllers for X and Y
+        PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+        PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+        PIDx.setPoint(PID_COEFFS['set_x'])
+        PIDy.setPoint(PID_COEFFS['set_y'])
+
+        # ag correction buffers - used for outlier rejection
+        BUFF_X, BUFF_Y = [], []
+
         # look for tonight's directory
         data_loc = None
         sleep_time = 10
         # loop while waiting on data directory & scope to be connected
         while not data_loc:
             data_loc = getDataDir()
-            if not args.debug:
-                connected, can, site = scopeCheck("simple")
-            else:
-                connected = True
-            if connected and data_loc:
+            if data_loc:
                 print("Found data directory: {}".format(data_loc))
                 os.chdir(data_loc)
                 break
-            if not connected:
-                print("[{}] Scope not connected...".format(strtime(datetime.utcnow())))
-                sleep_time = 30
             if not data_loc:
                 print("[{}] No data directory yet...".format(strtime(datetime.utcnow())))
                 sleep_time = 30
             time.sleep(sleep_time)
+
+        # connect to ACP only after the data directory is found
+        if not args.debug:
+            print("Checking for the telescope...")
+            myScope = win32com.client.Dispatch("ACP.Telescope")
+            connected, can, site = scopeCheck(myScope, "full")
+            if not connected:
+                print('Data directory exists but the telescope is not connected, quitting!')
+                sys.exit(1)
 
         # if we get to here we assume we have found the data directory
         # and that the scope is connected
@@ -754,12 +743,12 @@ if __name__ == "__main__":
         logShiftsToFile(LOGFILE, [], header=True)
         # check for any data in there
         n_images = len(templist)
-        # if no images appear for WAITTIME, then quit
+        # if no images appear before the end of the night, roll out to next night
         # otherwise report the last_file in the directory
         if n_images == 0:
-            ag_status, last_file, _, _ = waitForImage("", WAITTIME, n_images, "")
-            if ag_status == ag_timeout:
-                sys.exit()
+            ag_status, last_file, _, _ = waitForImage("", n_images, "", data_loc)
+            if ag_status == ag_new_day:
+                continue
         else:
             last_file = max(templist, key=os.path.getctime)
 
@@ -778,30 +767,8 @@ if __name__ == "__main__":
                     ref_file = "{}\\{}".format(AUTOGUIDER_REF_DIR, last_file)
         except IOError:
             print("Problem opening {}...".format(last_file))
-            print("Breaking back to check for new files...")
+            print("Breaking back to check for new day...")
             continue
-
-        # check for auto PID run
-        if args.calib_pid:
-            pid_set_p, pid_set_i, pid_set_d = splitObjectIdIntoPidCoeffs(ref_file)
-            # revert to configured values if not PID test data
-            if not pid_set_p:
-                PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
-                PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
-                print('Reverting PID: Px={} Ix={} Dx={}'.format(PID_COEFFS['x']['p'],
-                                                                PID_COEFFS['x']['i'],
-                                                                PID_COEFFS['x']['d']))
-                print('Reverting PID: Py={} Iy={} Dy={}'.format(PID_COEFFS['y']['p'],
-                                                                PID_COEFFS['y']['i'],
-                                                                PID_COEFFS['y']['d']))
-            else:
-                # initialise the PID controllers for X and Y to new values
-                # based on the special image filename
-                print('Updating PID: P={} I={} D={}'.format(pid_set_p, pid_set_i, pid_set_d))
-                PIDx = PID(pid_set_p, pid_set_i, pid_set_d)
-                PIDy = PID(pid_set_p, pid_set_i, pid_set_d)
-            PIDx.setPoint(PID_COEFFS['set_x'])
-            PIDy.setPoint(PID_COEFFS['set_y'])
 
         # finally, load up the reference file for this field/filter
         print("Ref_File: {}".format(ref_file))
@@ -815,27 +782,22 @@ if __name__ == "__main__":
         # Now wait on new images
         while 1:
             ag_status, check_file, current_field, current_filter = waitForImage(current_field,
-                                                                                WAITTIME, n_images,
+                                                                                n_images,
                                                                                 current_filter)
-            if ag_status == ag_timeout:
-                sys.exit()
-            elif ag_status == ag_new_field:
-                print("New field detected, looking for previous reference image...")
+            if ag_status == ag_new_day:
+                break
+            elif ag_status == ag_new_field or ag_status == ag_new_filter:
+                print("New field/filter detected, looking for previous reference image...")
+                # reset the PID coeffs to not carry performance across objects
+                print('Resetting PID loop for new field...')
+                PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
+                PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
+                PIDx.setPoint(PID_COEFFS['set_x'])
+                PIDy.setPoint(PID_COEFFS['set_y'])
                 try:
                     ref_file = ref_track[current_field][current_filter]
                     donuts_ref = Donuts(ref_file)
                     images_to_stabilise = IMAGES_TO_STABILISE
-                except KeyError:
-                    print('No reference in ref_track for this field/filter')
-                    print('Skipping back to reference image checks...')
-                    break
-            elif ag_status == ag_new_filter:
-                print("New filter detected, looking for previous reference image...")
-                try:
-                    ref_file = ref_track[current_field][current_filter]
-                    donuts_ref = Donuts(ref_file)
-                    images_to_stabilise = IMAGES_TO_STABILISE
-                    continue
                 except KeyError:
                     print('No reference in ref_track for this field/filter')
                     print('Skipping back to reference image checks...')
@@ -846,12 +808,20 @@ if __name__ == "__main__":
                                                       check_file, current_filter))
                 images_to_stabilise -= 1
                 # if we are done stabilising, reset the PID loop
-                if images_to_stabilise == 0 and not args.calib_pid:
+                if images_to_stabilise == 0:
                     print('Stabilisation complete, reseting PID loop...')
                     PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
                     PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
                     PIDx.setPoint(PID_COEFFS['set_x'])
                     PIDy.setPoint(PID_COEFFS['set_y'])
+                elif images_to_stabilise > 0:
+                    print('Stabilising using P=1.0, I=0.0, D=0.0')
+                    PIDx = PID(1.0, 0.0, 0.0)
+                    PIDy = PID(1.0, 0.0, 0.0)
+                    PIDx.setPoint(PID_COEFFS['set_x'])
+                    PIDy.setPoint(PID_COEFFS['set_y'])
+
+            # test load the comparison image to get the shift
             try:
                 h2 = fits.open(check_file)
             except IOError:
@@ -877,15 +847,15 @@ if __name__ == "__main__":
                     print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
                     culled_max_shift_y = 'y'
             else:
-                print('Allowing field to stabilise, imposing max error clip')
-                if solution_x > MAX_ERROR_PIXELS:
-                    solution_x = MAX_ERROR_PIXELS
-                elif solution_x < -MAX_ERROR_PIXELS:
-                    solution_x = -MAX_ERROR_PIXELS
-                if solution_y > MAX_ERROR_PIXELS:
-                    solution_y = MAX_ERROR_PIXELS
-                elif solution_y < -MAX_ERROR_PIXELS:
-                    solution_y = -MAX_ERROR_PIXELS
+                print('Allowing field to stabilise, imposing new max error clip')
+                if solution_x > MAX_ERROR_STABIL_PIXELS:
+                    solution_x = MAX_ERROR_STABIL_PIXELS
+                elif solution_x < -MAX_ERROR_STABIL_PIXELS:
+                    solution_x = -MAX_ERROR_STABIL_PIXELS
+                if solution_y > MAX_ERROR_STABIL_PIXELS:
+                    solution_y = MAX_ERROR_STABIL_PIXELS
+                elif solution_y < -MAX_ERROR_STABIL_PIXELS:
+                    solution_y = -MAX_ERROR_STABIL_PIXELS
             # if either axis is off by > MAX error then stop everything, no point guiding
             # in 1 axis, need to figure out the source of the problem and run again
             if culled_max_shift_x == 'y' or culled_max_shift_y == 'y':
@@ -894,8 +864,9 @@ if __name__ == "__main__":
                 if not args.debug:
                     applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y,
                                                                           images_to_stabilise)
+                    # !applied means no telescope, break to tomorrow
                     if not applied:
-                        sys.exit(1)
+                        break
                 else:
                     print("[SIM] Guide correction Applied")
             log_list = [os.path.split(ref_file)[1],

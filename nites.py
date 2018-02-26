@@ -43,6 +43,9 @@ DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
 # max allowed shift to correct
 MAX_ERROR_PIXELS = 20
 
+# max alloed shift to correct during stabilisation
+MAX_ERROR_STABIL_PIXELS = 40
+
 # ACP data base directory
 BASE_DIR = "C:\\data"
 AUTOGUIDER_REF_DIR = "C:\\data\\autoguider_ref"
