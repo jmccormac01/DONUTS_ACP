@@ -39,6 +39,7 @@ from donuts import Donuts
 # pylint: disable = no-member
 
 # TODO : Test the rotation of ccd axes
+# TODO : End stabilisation run early if shift < 2 pixels
 # TODO : Log the solution, sent_to_pid, post_pid corrections
 
 # autoguider status flags
@@ -835,6 +836,10 @@ if __name__ == "__main__":
             solution_y = shift.y.value
             print("x shift: {:.2f}".format(float(solution_x)))
             print("y shift: {:.2f}".format(float(solution_y)))
+            # revoke stabilisation early if shift less than 2 pixels
+            if abs(solution_x) <= 2.0 and abs(solution_y) < 2.0 and images_to_stabilse > 0:
+                images_to_stabilise = 1
+
             # Check if shift great than max allowed error in post pull in state
             if images_to_stabilise < 0:
                 if abs(solution_x) > MAX_ERROR_PIXELS:
