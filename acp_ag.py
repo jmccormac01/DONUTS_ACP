@@ -688,12 +688,8 @@ if __name__ == "__main__":
         print("\n**********************")
         print("* DEBUGGING Mode ON! *")
         print("**********************\n")
-    elif args.debug:
         print("[SIM] Connecting to telescope...")
         time.sleep(3)
-    else:
-        print("Unknown status of DEBUG, exiting...")
-        sys.exit(1)
 
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
