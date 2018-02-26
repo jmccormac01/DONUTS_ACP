@@ -2,4 +2,4 @@
 .python-version
 *.swp
 __pycache__
-
+.ipynb_checkpoints
