@@ -779,7 +779,8 @@ if __name__ == "__main__":
         while 1:
             ag_status, check_file, current_field, current_filter = waitForImage(current_field,
                                                                                 n_images,
-                                                                                current_filter)
+                                                                                current_filter,
+                                                                                data_loc)
             if ag_status == ag_new_day:
                 break
             elif ag_status == ag_new_field or ag_status == ag_new_filter:
