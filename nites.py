@@ -28,9 +28,6 @@ IMAGES_TO_STABILISE = 10
 # outlier rejection sigma
 SIGMA_BUFFER = 5
 
-# wait time (s)
-WAITTIME = 21600
-
 # pulseGuide conversions
 PIX2TIME = {'+x': 100.00,
             '-x': 100.00,

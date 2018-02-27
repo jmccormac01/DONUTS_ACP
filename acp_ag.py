@@ -39,7 +39,6 @@ from donuts import Donuts
 # pylint: disable = no-member
 
 # TODO : Test the rotation of ccd axes
-# TODO : End stabilisation run early if shift < 2 pixels
 # TODO : Log the solution, sent_to_pid, post_pid corrections
 
 # autoguider status flags
@@ -218,6 +217,7 @@ def guide(x, y, images_to_stabilise):
             BUFF_Y.pop(0)
         assert len(BUFF_X) == len(BUFF_Y)
         if images_to_stabilise < 0:
+            CURRENT_MAX_SHIFT = MAX_ERROR_PIXELS
             # kill anything that is > sigma_buffer sigma buffer stats
             if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
                 print('Filling AG stats buffer...')
@@ -237,6 +237,7 @@ def guide(x, y, images_to_stabilise):
                     pass
         else:
             print('Ignoring AG buffer during stabilisation')
+            CURRENT_MAX_SHIFT = MAX_ERROR_STABIL_PIXELS
             sigma_x = 0.0
             sigma_y = 0.0
 
@@ -246,37 +247,37 @@ def guide(x, y, images_to_stabilise):
 
         # check if we are stabilising and allow for the max shift
         if images_to_stabilise > 0:
-            if pidx >= MAX_ERROR_STABIL_PIXELS:
-                pidx = MAX_ERROR_STABIL_PIXELS
-            elif pidx <= -MAX_ERROR_STABIL_PIXELS:
-                pidx = -MAX_ERROR_STABIL_PIXELS
-            if pidy >= MAX_ERROR_STABIL_PIXELS:
-                pidy = MAX_ERROR_STABIL_PIXELS
-            elif pidy <= -MAX_ERROR_STABIL_PIXELS:
-                pidy = -MAX_ERROR_STABIL_PIXELS
+            if pidx >= CURRENT_MAX_SHIFT:
+                pidx = CURRENT_MAX_SHIFT
+            elif pidx <= -CURRENT_MAX_SHIFT:
+                pidx = -CURRENT_MAX_SHIFT
+            if pidy >= CURRENT_MAX_SHIFT:
+                pidy = CURRENT_MAX_SHIFT
+            elif pidy <= -CURRENT_MAX_SHIFT:
+                pidy = -CURRENT_MAX_SHIFT
         print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
 
         # make another check that the post PID values are not > Max allowed
         # using >= allows for the stabilising runs to get through
         # abs() on -ve duration otherwise throws back an error
-        if pidy > 0 and pidy <= MAX_ERROR_PIXELS:
+        if pidy > 0 and pidy <= CURRENT_MAX_SHIFT:
             guide_time_y = pidy * PIX2TIME['+y']
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['+y'], guide_time_y)
-        if pidy < 0 and pidy >= -MAX_ERROR_PIXELS:
+        if pidy < 0 and pidy >= -CURRENT_MAX_SHIFT:
             guide_time_y = abs(pidy * PIX2TIME['-y'])
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
             myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.01)
-        if pidx > 0 and pidx <= MAX_ERROR_PIXELS:
+        if pidx > 0 and pidx <= CURRENT_MAX_SHIFT:
             guide_time_x = pidx * PIX2TIME['+x']
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
             myScope.PulseGuide(DIRECTIONS['+x'], guide_time_x)
-        if pidx < 0 and pidx >= -MAX_ERROR_PIXELS:
+        if pidx < 0 and pidx >= -CURRENT_MAX_SHIFT:
             guide_time_x = abs(pidx * PIX2TIME['-x'])
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
