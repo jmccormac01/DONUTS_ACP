@@ -697,8 +697,6 @@ if __name__ == "__main__":
     ref_track = defaultdict(dict)
 
     # outer loop to loop over field and night changes etc
-    # TODO: add handling of day changes when re-enabling daemon mode
-    # TODO: stop polling telecope, only poll for data and then run
     while 1:
         # initialise the PID controllers for X and Y
         PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
