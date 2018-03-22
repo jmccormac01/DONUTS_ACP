@@ -517,6 +517,10 @@ def waitForImage(current_field, n_images, current_filter, current_data_dir):
                 # cycle back and try again
                 print('Problem accessing fits file {}, skipping...'.format(newest_image))
                 continue
+            except OSError:
+                # this catches the missing header END card
+                print('Problem accessing fits file {}, skipping...'.format(newest_image))
+                continue
             # new start? if so, return the newest image info
             if current_field == "" and current_filter == "":
                 return ag_new_start, newest_image, newest_field, newest_filter
