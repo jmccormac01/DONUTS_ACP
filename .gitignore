@@ -3,3 +3,4 @@
 *.swp
 __pycache__
 .ipynb_checkpoints
+install/confidential.txt
