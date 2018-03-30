@@ -18,7 +18,7 @@ Add and configure an instrument specific configuration file.
 ```sh
 $> Open Anaconda Prompt
 $> cd C:\Users\speculoos\Documents\GitHub\DONUTS_ACP\
-$> python acp_ag.py io [--debug]
+$> python acp_ag.py speculoos_io [--debug]
 ```
 
 # Schematic
