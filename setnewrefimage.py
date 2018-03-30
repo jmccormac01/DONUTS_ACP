@@ -150,15 +150,15 @@ def addNewRefImage(field, telescope, ref_image, filt):
 
 if __name__ == "__main__":
     args = argParse()
-    if args.instrument == 'nites':
+    if args.telescope == 'nites':
         from nites import *
-    elif args.instrument == 'io':
+    elif args.telescope == 'io':
         from io import *
-    elif args.instrument == 'callisto':
+    elif args.telescope == 'callisto':
         from callisto import *
-    elif args.instrument == 'europa':
+    elif args.telescope == 'europa':
         from europa import *
-    elif args.instrument == 'ganymede':
+    elif args.telescope == 'ganymede':
         from ganymede import *
     else:
         sys.exit(1)
