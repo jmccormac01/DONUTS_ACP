@@ -153,13 +153,13 @@ if __name__ == "__main__":
     if args.telescope == 'nites':
         from nites import *
     elif args.telescope == 'io':
-        from io import *
+        from speculoos_io import *
     elif args.telescope == 'callisto':
-        from callisto import *
+        from speculoos_callisto import *
     elif args.telescope == 'europa':
-        from europa import *
+        from speculoos_europa import *
     elif args.telescope == 'ganymede':
-        from ganymede import *
+        from speculoos_ganymede import *
     else:
         sys.exit(1)
     checkForPreviousRefImage(args.field, args.telescope, args.filt)

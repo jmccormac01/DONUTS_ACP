@@ -686,13 +686,13 @@ if __name__ == "__main__":
     if args.instrument == 'nites':
         from nites import *
     elif args.instrument == 'io':
-        from io import *
+        from speculoos_io import *
     elif args.instrument == 'callisto':
-        from callisto import *
+        from speculoos_callisto import *
     elif args.instrument == 'europa':
-        from europa import *
+        from speculoos_europa import *
     elif args.instrument == 'ganymede':
-        from ganymede import *
+        from speculoos_ganymede import *
     else:
         sys.exit(1)
 
