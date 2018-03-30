@@ -27,6 +27,7 @@ import pymysql
 # TODO: copy old table over
 # TODO: test adding new fields manually
 # TODO: Fix restarting donuts during the day
+# TODO: Is donuts building up the telescope offset over time?
 
 def argParse():
     """
