@@ -110,7 +110,7 @@ def checkForPreviousRefImage(field, telescope, filt):
         else:
             print('Found currently active reference image:')
             print(results)
-            yn = input('Replace this image? (y | n)')
+            yn = input('Replace this image? (y | n): ')
             if yn.lower() == 'y':
                 o_ref_id = results[0][0]
                 o_field = results[0][1]
