@@ -1,5 +1,5 @@
 """
-Confiuguration parameters for SPECULOOS
+Confiuguration parameters for SPECULOOS Callisto
 """
 # e.g. .fits or .fit etc
 IMAGE_EXTENSION = ".fts"

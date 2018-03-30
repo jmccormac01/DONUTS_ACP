@@ -64,7 +64,8 @@ def argParse():
     p = ap.ArgumentParser()
     p.add_argument('instrument',
                    help='select an instrument',
-                   choices=['nites', 'speculoos'])
+                   choices=['io', 'callisto', 'europa',
+                            'ganymede', 'nites'])
     p.add_argument("--debug",
                    help="runs the script without applying corrections",
                    action="store_true")
@@ -684,8 +685,14 @@ if __name__ == "__main__":
     args = argParse()
     if args.instrument == 'nites':
         from nites import *
-    elif args.instrument == 'speculoos':
-        from speculoos import *
+    elif args.instrument == 'io':
+        from io import *
+    elif args.instrument == 'callisto':
+        from callisto import *
+    elif args.instrument == 'europa':
+        from europa import *
+    elif args.instrument == 'ganymede':
+        from ganymede import *
     else:
         sys.exit(1)
 
