@@ -22,10 +22,6 @@ import pymysql
 # pylint: disable=wildcard-import
 # pylint: disable=unused-import
 
-# TODO: check if names or paths in table
-# TODO: update new db schema
-# TODO: copy old table over
-# TODO: test adding new fields manually
 # TODO: Fix restarting donuts during the day
 # TODO: Is donuts building up the telescope offset over time?
 
