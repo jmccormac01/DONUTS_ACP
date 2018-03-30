@@ -1,8 +1,6 @@
-
-/* New schema*/
+/* old schema*/
 CREATE TABLE autoguider_ref (
-  ref_id mediumint not null auto_increment primary key,
-  field varchar(100) not null,
+  field varchar(100) not null primary key,
   telescope varchar(20) not null,
   ref_image varchar(100) not null,
   filter varchar(20) not null,
@@ -10,9 +8,14 @@ CREATE TABLE autoguider_ref (
   valid_until datetime
 );
 
-/* old schema*/
+/*Use this command to switch*/
+ALTER TABLE autoguider_ref DROP primary key,
+ADD ref_id mediumint auto_increment primary key first;
+
+/* New schema*/
 CREATE TABLE autoguider_ref (
-  field varchar(100) not null primary key,
+  ref_id mediumint not null auto_increment primary key,
+  field varchar(100) not null,
   telescope varchar(20) not null,
   ref_image varchar(100) not null,
   filter varchar(20) not null,
