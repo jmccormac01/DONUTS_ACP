@@ -644,7 +644,7 @@ def getReferenceImage(field, filt):
         ref_image = "{}\\{}".format(AUTOGUIDER_REF_DIR, result[0])
     return ref_image
 
-def setReferenceImage(field, filt, ref_image, telescope='Io'):
+def setReferenceImage(field, filt, ref_image, telescope):
     """
     Set a new image as a reference in the database
 
@@ -770,7 +770,7 @@ if __name__ == "__main__":
                 # if there is no reference image, set this one as it and continue
                 # set the previous reference image
                 if not ref_file:
-                    setReferenceImage(current_field, current_filter, last_file)
+                    setReferenceImage(current_field, current_filter, last_file, args.instrument)
                     ref_file = "{}\\{}".format(AUTOGUIDER_REF_DIR, last_file)
         except IOError:
             print("Problem opening {}...".format(last_file))
