@@ -130,7 +130,7 @@ def checkForPreviousRefImage(field, telescope, filt):
         print('No previous reference image found for {} {} {}'.format(field,
                                                                       telescope,
                                                                       filt))
-def addNewRefImage(field, telescope, ref_image, filt):
+def addNewRefImage(ref_image, field, telescope, filt):
     """
     """
     print('Adding new ref_image to database')
