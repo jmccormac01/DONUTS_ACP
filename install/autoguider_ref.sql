@@ -14,7 +14,7 @@ ADD ref_id mediumint auto_increment primary key first;
 
 /* New schema*/
 CREATE TABLE autoguider_ref (
-  ref_id mediumint not null auto_increment primary key,
+  ref_id mediumint auto_increment primary key,
   field varchar(100) not null,
   telescope varchar(20) not null,
   ref_image varchar(100) not null,
