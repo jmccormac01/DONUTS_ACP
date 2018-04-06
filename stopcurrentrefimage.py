@@ -1,20 +1,17 @@
 """
-Script to create a new reference image for a given field
+Script to disable the current reference image for a given field.
+Use this is you want donuts to make a new reference automatically
 
    1. First check for current referene image for this field
    1. If there is one:
       1. Update that row with valid_until as now
       1. Move the image to the autoguider_ref/old folder
-   1. Add the new image to the table
-   1. Copy the new image to the autoguider_ref folder
+   1. Else, do nothing
 """
 import os
 import sys
 import argparse as ap
-from shutil import (
-    copyfile,
-    move
-    )
+from shutil import move
 from datetime import datetime
 import pymysql
 
@@ -26,8 +23,6 @@ def argParse():
     """
     """
     p = ap.ArgumentParser()
-    p.add_argument('ref_image',
-                   help='Name of new reference image')
     p.add_argument('field',
                    help='Name of field')
     p.add_argument('telescope',
@@ -49,13 +44,6 @@ def moveImage(image, dest):
     if not os.path.exists(dest):
         os.mkdir(dest)
     move(image, dest)
-
-def copyImage(image, dest):
-    """
-    """
-    if not os.path.exists(dest):
-        os.mkdir(dest)
-    copyfile(image, "{}/{}".format(dest, image))
 
 def disableRefImage(ref_id, field, telescope, ref_image, filt):
     """
@@ -103,7 +91,7 @@ def checkForPreviousRefImage(field, telescope, filt):
         else:
             print('Found currently active reference image:')
             print(results)
-            yn = input('Replace this image? (y | n): ')
+            yn = input('Disable this image? (y | n): ')
             if yn.lower() == 'y':
                 o_ref_id = results[0][0]
                 o_field = results[0][1]
@@ -123,23 +111,6 @@ def checkForPreviousRefImage(field, telescope, filt):
         print('No previous reference image found for {} {} {}'.format(field,
                                                                       telescope,
                                                                       filt))
-def addNewRefImage(ref_image, field, telescope, filt):
-    """
-    """
-    print('Adding new ref_image to database')
-    qry_args = (field, telescope, ref_image, filt, tnow())
-    qry = """
-        INSERT INTO autoguider_ref
-        (field, telescope, ref_image, filter, valid_from)
-        VALUES
-        (%s, %s, %s, %s, %s)
-        """
-    with pymysql.connect(host=DB_HOST, db=DB_DATABASE,
-                         user=DB_USER, password=DB_PASS) as cur:
-        cur.execute(qry, qry_args)
-    print('Copying {} --> {}'.format(ref_image, AUTOGUIDER_REF_DIR))
-    copyImage(ref_image, AUTOGUIDER_REF_DIR)
-
 
 if __name__ == "__main__":
     args = argParse()
@@ -156,5 +127,4 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
     checkForPreviousRefImage(args.field, args.telescope, args.filt)
-    addNewRefImage(args.ref_image, args.field, args.telescope, args.filt)
-    print('Remember to restart Donuts after applying new reference images!')
+    print('Remember to restart Donuts after disabling reference images!')
