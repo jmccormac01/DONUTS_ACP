@@ -70,7 +70,7 @@ if __name__ == "__main__":
         y[object_id] = defaultdict(list)
         ref_filts = getReferenceImagesForField(object_id)
         for ref in ref_filts:
-            stats = getAgStats(ref, ref_filts[ref])
+            stats = getAgStats(ref)
             for i, row in enumerate(stats):
                 # skip the first 10
                 if i >= 10:
