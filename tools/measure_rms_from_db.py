@@ -23,7 +23,10 @@ def getUniqueObjectIds():
                          user='speculoos', password='spec_ops') as cur:
         cur.execute(qry)
         results = cur.fetchall()
-    return results
+    object_ids = []
+    for row in results:
+        object_ids.append(row[0])
+    return object_ids
 
 def getReferenceImagesForField(field):
     """
