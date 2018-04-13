@@ -83,5 +83,9 @@ if __name__ == "__main__":
             rms_x = np.std(x[object_id][filt])
             rms_y = np.std(y[object_id][filt])
             ax.legend(("RMS_x={:.3f} pix".format(rms_x),
-                       "RMS_y={:.3f} pix".format(rms_y)), loc=4)
+                       "RMS_y={:.3f} pix".format(rms_y)), loc=4, fontsize=20)
+            ax.set_xlabel('Image number')
+            ax.set_ylabel('Offset (pixels)')
+            ax.set_title('{} {}'.format(object_id, filt))
+            fig.subplots_adjust(bottom=0.12, top=0.97, left=0.12, right=0.97)
             fig.savefig('{}_{}_donuts.png'.format(object_id, filt), dpi=300)
