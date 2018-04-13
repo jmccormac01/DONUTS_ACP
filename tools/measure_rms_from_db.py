@@ -45,17 +45,16 @@ def getReferenceImagesForField(field):
     ref_filts = {row[0]: row[1] for row in results}
     return ref_filts
 
-def getAgStats(ref_image, filt):
+def getAgStats(ref_image):
     """
     """
     qry = """
         SELECT
         solution_x, solution_y
         FROM autoguider_log
-        WHERE ref_image=%s
-        AND filter=%s
+        WHERE reference=%s
         """
-    qry_args = (ref_image, filt,)
+    qry_args = (ref_image, )
     with pymysql.connect(host='localhost', db='spec_ops',
                          user='speculoos', password='spec_ops') as cur:
         cur.execute(qry, qry_args)
