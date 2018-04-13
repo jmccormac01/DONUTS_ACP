@@ -31,7 +31,7 @@ def getReferenceImagesForField(field):
     qry = """
         SELECT
         ref_image, filter
-        FROM autoguider_log
+        FROM autoguider_ref
         WHERE field=%s
         """
     qry_args = (field, )
