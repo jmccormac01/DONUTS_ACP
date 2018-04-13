@@ -74,5 +74,5 @@ if __name__ == "__main__":
             for i, row in enumerate(stats):
                 # skip the first 10
                 if i >= 10:
-                    x[object_id][ref_filts[ref]].append()
-                    y[object_id][ref_filts[ref]].append()
+                    x[object_id][ref_filts[ref]].append(float(row[0]))
+                    y[object_id][ref_filts[ref]].append(float(row[1]))
