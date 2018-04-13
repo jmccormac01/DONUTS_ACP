@@ -79,7 +79,7 @@ if __name__ == "__main__":
         for filt in x[object_id]:
             xx = np.array(x[object_id][filt])
             yy = np.array(y[object_id][filt])
-            fig, ax = plt.subplots(1, figsize=(10, 10))
+            fig, ax = plt.subplots(1, figsize=(10, 5))
             ax.plot(xx, 'r.')
             ax.plot(yy, 'b.')
             rms_x = np.std(xx)
@@ -93,9 +93,9 @@ if __name__ == "__main__":
 
             ax.legend(("RMS_x={:.3f} ({:.3f}) pix".format(rms_x, rms_x_c),
                        "RMS_y={:.3f} ({:.3f}) pix".format(rms_y, rms_y_c)),
-                      loc=4, fontsize=20)
-            ax.set_xlabel('Image number')
-            ax.set_ylabel('Offset (pixels)')
-            ax.set_title('{} {}'.format(object_id, filt))
-            fig.subplots_adjust(bottom=0.12, top=0.97, left=0.12, right=0.97)
+                      fontsize=16)
+            ax.set_xlabel('Image number', fontsize=16)
+            ax.set_ylabel('Offset (pixels)', fontsize=16)
+            ax.set_title('{} {}'.format(object_id, filt), fontsize=16)
+            fig.subplots_adjust(bottom=0.10, top=0.95, left=0.10, right=0.97)
             fig.savefig('{}_{}_donuts.png'.format(object_id, filt), dpi=300)
