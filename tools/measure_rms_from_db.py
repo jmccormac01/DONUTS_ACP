@@ -77,17 +77,19 @@ if __name__ == "__main__":
     # now plot the values and do stats
     for object_id in x:
         for filt in x[object_id]:
+            xx = np.array(x[object_id][filt])
+            yy = np.array(y[object_id][filt])
             fig, ax = plt.subplots(1, figsize=(10, 10))
-            ax.plot(x[object_id][filt], 'r.')
-            ax.plot(y[object_id][filt], 'b.')
-            rms_x = np.std(x[object_id][filt])
-            rms_y = np.std(y[object_id][filt])
+            ax.plot(xx, 'r.')
+            ax.plot(yy, 'b.')
+            rms_x = np.std(xx)
+            rms_y = np.std(yy)
 
             # get stats on clipped data
-            n_x = np.where((x[object_id][filt]>-5*rms_x) & (x[object_id][filt]<5*rms_x))
-            n_y = np.where((y[object_id][filt]>-5*rms_y) & (y[object_id][filt]<5*rms_y))
-            rms_x_c = np.std(x[object_id][filt][n_x])
-            rms_y_c = np.std(y[object_id][filt][n_y])
+            n_x = np.where((xx > -5*rms_x) & (xx < 5*rms_x))
+            n_y = np.where((yy > -5*rms_y) & (yy < 5*rms_y))
+            rms_x_c = np.std(xx[n_x])
+            rms_y_c = np.std(yy[n_y])
 
             ax.legend(("RMS_x={:.3f} ({:.3f}) pix".format(rms_x, rms_x_c),
                        "RMS_y={:.3f} ({:.3f}) pix".format(rms_y, rms_y_c)),
