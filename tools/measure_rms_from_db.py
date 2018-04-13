@@ -76,3 +76,14 @@ if __name__ == "__main__":
                 if i >= 10:
                     x[object_id][ref_filts[ref]].append(float(row[0]))
                     y[object_id][ref_filts[ref]].append(float(row[1]))
+    # now plot the values and do stats
+    for object_id in x:
+        for filt in x[object_id]:
+            fig, ax = plt.subplots(1, figsize=(10, 10))
+            ax.plot(x[object_id][filt], 'r.')
+            ax.plot(y[object_id][filt], 'b.')
+            rms_x = np.std(x[object_id][filt])
+            rms_y = np.std(y[object_id][filt])
+            ax.legend(("RMS_x={:.3f} pix".format(rms_x),
+                       "RMS_y={:.3f} pix".format(rms_y)), loc=4)
+            fig.savefig('{}_{}_donuts.png'.format(object_id, filt), dpi=300)
