@@ -84,8 +84,8 @@ if __name__ == "__main__":
             rms_y = np.std(y[object_id][filt])
 
             # get stats on clipped data
-            n_x = np.where((x>-5*rms_x) & (x<5*rms_x))
-            n_y = np.where((y>-5*rms_y) & (y<5*rms_y))
+            n_x = np.where((x[object_id][filt]>-5*rms_x) & (x[object_id][filt]<5*rms_x))
+            n_y = np.where((y[object_id][filt]>-5*rms_y) & (y[object_id][filt]<5*rms_y))
             rms_x_c = np.std(x[object_id][filt][n_x])
             rms_y_c = np.std(y[object_id][filt][n_y])
 
