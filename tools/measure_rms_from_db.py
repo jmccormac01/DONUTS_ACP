@@ -82,8 +82,16 @@ if __name__ == "__main__":
             ax.plot(y[object_id][filt], 'b.')
             rms_x = np.std(x[object_id][filt])
             rms_y = np.std(y[object_id][filt])
-            ax.legend(("RMS_x={:.3f} pix".format(rms_x),
-                       "RMS_y={:.3f} pix".format(rms_y)), loc=4, fontsize=20)
+
+            # get stats on clipped data
+            n_x = np.where((x>-5*rms_x) & (x<5*rms_x))
+            n_y = np.where((y>-5*rms_y) & (y<5*rms_y))
+            rms_x_c = np.std(x[object_id][filt][n_x])
+            rms_y_c = np.std(y[object_id][filt][n_y])
+
+            ax.legend(("RMS_x={:.3f} ({:.3f}) pix".format(rms_x, rms_x_c),
+                       "RMS_y={:.3f} ({:.3f}) pix".format(rms_y, rms_y_c)),
+                      loc=4, fontsize=20)
             ax.set_xlabel('Image number')
             ax.set_ylabel('Offset (pixels)')
             ax.set_title('{} {}'.format(object_id, filt))
