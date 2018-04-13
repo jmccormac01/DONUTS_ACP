@@ -72,10 +72,8 @@ if __name__ == "__main__":
         for ref in ref_filts:
             stats = getAgStats(ref)
             for i, row in enumerate(stats):
-                # skip the first 10
-                if i >= 10:
-                    x[object_id][ref_filts[ref]].append(float(row[0]))
-                    y[object_id][ref_filts[ref]].append(float(row[1]))
+                x[object_id][ref_filts[ref]].append(float(row[0]))
+                y[object_id][ref_filts[ref]].append(float(row[1]))
     # now plot the values and do stats
     for object_id in x:
         for filt in x[object_id]:
