@@ -5,8 +5,8 @@
 'tabs=4
 -----------------------------------------------------------------------------------------
 
-ACP Custom User Actions Component Framework
-===========================================
+ACP Custom User Actions Component Framework - JScript Version
+=============================================================
 
 Script:         UserActions.wsc
 Author:         Robert B. Denny <rdenny@dc3.com>
@@ -73,6 +73,7 @@ Edit History:
     28-Apr-16   8.1 - GEM:1458 Add AcquireImage user action.
     13-Apr-18   Adds TargetStart and TargetEnd support for triggering Donuts - JMCC
     14-Apr-18   Spotted script was mix of VBSCRIPT & JSCRIPT, ported it to JScript - JMCC
+
 -----------------------------------------------------------------------------------------
 ]]>
 	</comment>
@@ -292,6 +293,9 @@ function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
 //       ACQUIREIMAGES IS COMPLETELY FINISHED WITH THE IMAGE FILE (EXCEPT
 //       For AUTOSTACKING. SEE NOTE BELOW!)
 //------------------------------------------------------------------------------
+//
+// original VBScript code from before adding donuts - Note: no error checking here
+//
 //Function ImageEnd(ImageFile)
 //Util.Console.PrintLine " [useraction] ImageEnd called"
 //Dim PL, FMxF
@@ -306,7 +310,7 @@ function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
 //Set PL = nothing
 //ImageEnd = True
 //End Function
-
+//
 function ImageEnd(ImageFile){
     Util.Console.PrintLine(" [useraction] ImageEnd called");
     var PL = new ActiveXObject("PinPoint.Plate");
@@ -417,13 +421,13 @@ function TargetStart(Plan, Target, NextTarget){
     //start donuts if requested
     if (Target.Tags !== null){
         if (Target.Tags.Donuts !== undefined){
-            if (Target.Tags.Donuts == true){
+            if (Target.Tags.Donuts == "on"){
                 var started = startDonuts();
                 if (started === ""){
                     Console.PrintLine("**ERR: Failed to start donuts**");
                     return false;
                 }
-            } elseif {Target.Tags.Donuts == false}{
+            } else if {Target.Tags.Donuts == "off"}{
                 var stopped = stopDonuts();
                 if (stopped === ""){
                     Console.PrintLine("**ERR: Failed to stop donuts**");
@@ -460,7 +464,7 @@ function TargetEnd(Plan, Target, NextTarget){
     //stop donuts if requested
     if (Target.Tags !== null){
         if (Target.Tags.Donuts !== undefined){
-            if (Target.Tags.Donuts == true){
+            if (Target.Tags.Donuts == "on"){
                 var stopped = stopDonuts();
                 if (stopped === ""){
                     Console.PrintLine("**ERR: Failed to stop donuts**");
