@@ -21,8 +21,10 @@ if __name__ == "__main__":
     args = argParse()
     if args.action == 'start':
         os.mkdir('C:\\testdirstart')
+        sys.exit(0)
     elif args.action == 'stop':
         os.mkdir('C:\\testdirstop')
+        sys.exit(0)
     else:
         print('Unknown input, exiting')
         sys.exit(1)

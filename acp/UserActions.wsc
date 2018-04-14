@@ -71,6 +71,8 @@ Edit History:
     07-Nov-11   No logic change, GEM:732 add notation on registering including for 64 bit
                 Remove old startup/shutdown notation.
     28-Apr-16   8.1 - GEM:1458 Add AcquireImage user action.
+    13-Apr-18   Adds TargetStart and TargetEnd support for triggering Donuts - JMCC
+    14-Apr-18   Spotted script was mix of VBSCRIPT & JSCRIPT, ported it to JScript - JMCC
 -----------------------------------------------------------------------------------------
 ]]>
 	</comment>
@@ -124,239 +126,351 @@ Edit History:
 		<object id="FSO" progid="Scripting.FileSystemObject" events="false" reference="false"/>
 		<object id="ACPApp" progid="ACP.Application" events="false" reference="true"/>
 		<object id="Util" progid="ACP.Util" events="false" reference="false"/>
-		<script id="UserActions" language="VBScript">
+		<script id="UserActions" language="JScript">
 <![CDATA[
-Option Explicit
-
-'------------------------------------------------------------------------------
-' ScriptStart()     Called at start of script execution
-'
-' Parameters:
-'   None:
-'
-' Return True to continue ACP script, False to stop ACP script
-'------------------------------------------------------------------------------
-Function ScriptStart()
-    ''Util.Console.PrintLine "[useraction] ScriptStart called"
-    ScriptStart=True
-End Function
+//Option Explicit //- this was from old VBScript, commented out in JScript
 
 
-'------------------------------------------------------------------------------
-' ScriptEnd()       Called at the end of script execution
-'
-' Parameters:
-'   None
-'
-' No return. THIS WILL NOT BE CALLED ON A SCRIPT ERROR
-'------------------------------------------------------------------------------
-Sub ScriptEnd()
-    ''Util.Console.PrintLine "[useraction] ScriptEnd called"
-End Sub
+//------------------------------------------------------------------------------
+// startDonuts()     Called if TAG Donuts=true
+//
+// Parameters:
+//   None:
+//
+// Return True to continue ACP script, False to stop ACP script
+//------------------------------------------------------------------------------
+function startDonuts(){
+    var Console = Util.Console;
+    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
+    var guideScript = workDir + "\\donuts_process.py start";
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
+    Console.PrintLine("Starting donuts...");
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\"");
+    var timeout = 60;
+    while(Util.IsTaskActive(TID))
+    {
+        Util.WaitForMilliseconds(1000);
+        timeout = timeout - 1;
+        if (timeout <= 0)
+        {
+            Util.Console.PrintLine("Donuts start command never exited!");
+            return "";
+        }
+    }
+    var exStat = Util.GetTaskExitStatus(TID);
+    if (exStat !== 0)
+    {
+        Util.Console.PrintLine("donuts_process.py script failed, exit status = " + exStat);
+        return "";
+    }
+    Console.PrintLine("Donuts started successfully...");
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// stopDonuts()     Called at the end of a target who's TAG is Donuts=true
+//
+// Parameters:
+//   None:
+//
+// Return True to continue ACP script, False to stop ACP script
+//------------------------------------------------------------------------------
+function stopDonuts(){
+    var Console = Util.Console;
+    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
+    var guideScript = workDir + "\\donuts_process.py stop";
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
+    Console.PrintLine("Stopping donuts...");
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\"");
+    var timeout = 60;
+    while(Util.IsTaskActive(TID))
+    {
+        Util.WaitForMilliseconds(1000);
+        timeout = timeout - 1;
+        if (timeout <= 0)
+        {
+            Util.Console.PrintLine("Donuts stop command never exited!");
+            return "";
+        }
+    }
+    var exStat = Util.GetTaskExitStatus(TID);
+    if (exStat !== 0)
+    {
+        Util.Console.PrintLine("donuts_process.py script failed, exit status = " + exStat);
+        return "";
+    }
+    Console.PrintLine("Donuts stopped successfully...");
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// ScriptStart()     Called at start of script execution
+//
+// Parameters:
+//   None:
+//
+// Return True to continue ACP script, False to stop ACP script
+//------------------------------------------------------------------------------
+function ScriptStart(){
+    //Util.Console.PrintLine(" [useraction] ScriptStart called");
+    return true;
+}
 
 
-'------------------------------------------------------------------------------
-' SlewStart()       Called prior To starting a slew
-'
-' Parameters:
-'   RightAscension:     J2000 right ascension of slew destination
-'   Declination:        J2000 declination of slew destination
-'
-' Return True to permit the slew. False will prevent the slew and cause the 
-' script to stop with an error.
-'------------------------------------------------------------------------------
-Function SlewStart(RightAscension, Declination)
-    ''Util.Console.PrintLine "  [useraction] SlewStart called"
-    SlewStart = True
-End Function
+//------------------------------------------------------------------------------
+// ScriptEnd()       Called at the end of script execution
+//
+// Parameters:
+//   None
+//
+// No return. THIS WILL NOT BE CALLED ON A SCRIPT ERROR
+//------------------------------------------------------------------------------
+function ScriptEnd(){
+    //Util.Console.PrintLine(" [useraction] ScriptEnd called");
+    return;
+}
 
 
-'------------------------------------------------------------------------------
-' SlewEnd()         Called when a slew has ended
-'
-' Parameters:
-'   None
-'
-' Return True to permit the script to continue. Returning False will cause the 
-' script to stop with an error.
-'------------------------------------------------------------------------------
-Function SlewEnd()
-    ''Util.Console.PrintLine "  [useraction] SlewEnd called"
-    SlewEnd = True
-End Function
+//------------------------------------------------------------------------------
+// SlewStart()       Called prior To starting a slew
+//
+// Parameters:
+//   RightAscension:     J2000 right ascension of slew destination
+//   Declination:        J2000 declination of slew destination
+//
+// Return True to permit the slew. False will prevent the slew and cause the 
+// script to stop with an error.
+//------------------------------------------------------------------------------
+function SlewStart(RightAscension, Declination){
+    //Util.Console.PrintLine(" [useraction] SlewStart called");
+    return true;
+}
 
+//------------------------------------------------------------------------------
+// SlewEnd()         Called when a slew has ended
+//
+// Parameters:
+//   None
+//
+// Return True to permit the script to continue. Returning False will cause the 
+// script to stop with an error.
+//------------------------------------------------------------------------------
+function SlewEnd(){
+    //Util.Console.PrintLine(" [useraction] SlewEnd called");
+    return true;
+}
 
-'------------------------------------------------------------------------------
-' ImageStart()      Called just before image acquisition
-'
-' Parameters:
-'   Interval:       Exposure interval (sec, 0=bias, neg=dark)   (read/write)
-'   Binning:        Binning level                               (read/write)
-'   Subframe:       Subframe size (fractional)                  (read/write)
-'   FilterNum:      Filter number                               (DO NOT CHANGE!!!!!)
-'   ForPointing     True if this is pointing exp.               (DO NOT CHANGE!!!!!)
-'
-' Return True to permit the script to continue. Returning False will cause the 
-' script to stop with an error.
-'------------------------------------------------------------------------------
-Function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing)
-    ''Util.Console.PrintLine "  [useraction] ImageStart called"
-    ImageStart = True
-End Function
+//------------------------------------------------------------------------------
+// ImageStart()      Called just before image acquisition
+//
+// Parameters:
+//   Interval:       Exposure interval (sec, 0=bias, neg=dark)   (read/write)
+//   Binning:        Binning level                               (read/write)
+//   Subframe:       Subframe size (fractional)                  (read/write)
+//   FilterNum:      Filter number                               (DO NOT CHANGE!!!!!)
+//   ForPointing     True if this is pointing exp.               (DO NOT CHANGE!!!!!)
+//
+// Return True to permit the script to continue. Returning False will cause the 
+// script to stop with an error.
+//------------------------------------------------------------------------------
+function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
+    //Util.Console.PrintLine(" [useraction] ImageStart called");
+    return true;
+}
 
+//------------------------------------------------------------------------------
+// ImageEnd()        Called when image acquisition has ended
+//
+// Parameters:
+//   ImageFile:      Full path/name to image file
+//
+// Return True to permit the script to continue. Returning False will cause the 
+// script to stop with an error.
+//
+// NOTE: DO NOT RENAME OR MOVE THE FILE HERE IF YOU ARE USING THIS WITH
+//       ACQUIREIMAGES. USE #IMAGECOMPLETE (BELOW), WHICH RUNS AFTER
+//       ACQUIREIMAGES IS COMPLETELY FINISHED WITH THE IMAGE FILE (EXCEPT
+//       For AUTOSTACKING. SEE NOTE BELOW!)
+//------------------------------------------------------------------------------
+//Function ImageEnd(ImageFile)
+//Util.Console.PrintLine " [useraction] ImageEnd called"
+//Dim PL, FMxF
+//Set PL = CreateObject("PinPoint.Plate")
+//Set FMxF = CreateObject("FocusMax.Focuser")
+//PL.AttachFITS ImageFile
+//PL.WriteFITSDouble "FOCUSTEM", FMxF.Temperature, 1
+//PL.WriteFITSDouble "FOCUSPOS", FMxF.Position, 0
+//PL.UpdateFITS
+//PL.DetachFITS
+//Set FMxF = nothing
+//Set PL = nothing
+//ImageEnd = True
+//End Function
 
-'------------------------------------------------------------------------------
-' ImageEnd()        Called when image acquisition has ended
-'
-' Parameters:
-'   ImageFile:      Full path/name to image file
-'
-' Return True to permit the script to continue. Returning False will cause the 
-' script to stop with an error.
-'
-' NOTE: DO NOT RENAME OR MOVE THE FILE HERE IF YOU ARE USING THIS WITH
-'       ACQUIREIMAGES. USE #IMAGECOMPLETE (BELOW), WHICH RUNS AFTER
-'       ACQUIREIMAGES IS COMPLETELY FINISHED WITH THE IMAGE FILE (EXCEPT
-'       For AUTOSTACKING. SEE NOTE BELOW!)
-'------------------------------------------------------------------------------
-Function ImageEnd(ImageFile)
-Util.Console.PrintLine " [useraction] ImageEnd called"
-Dim PL, FMxF
-Set PL = CreateObject("PinPoint.Plate")
-Set FMxF = CreateObject("FocusMax.Focuser")
-PL.AttachFITS ImageFile
-PL.WriteFITSDouble "FOCUSTEM", FMxF.Temperature, 1
-PL.WriteFITSDouble "FOCUSPOS", FMxF.Position, 0
-PL.UpdateFITS
-PL.DetachFITS
-Set FMxF = nothing
-Set PL = nothing
-ImageEnd = True
-End Function
+function ImageEnd(ImageFile){
+    Util.Console.PrintLine(" [useraction] ImageEnd called");
+    var PL = new ActiveXObject("PinPoint.Plate");
+    var FMxF = new ActiveXObject("FocusMax.Focuser");
+    PL.AttachFITS(ImageFile);
+    PL.WriteFITSDouble("FOCUSTEM", FMxF.Temperature, 1);
+    PL.WriteFITSDouble("FOCUSPOS", FMxF.Position, 0);
+    PL.UpdateFITS();
+    PL.DetachFITS();
+    FMxF = null;
+    PL = null;
+    return true;
+}
 
+//------------------------------------------------------------------------------
+// Shutdown()        Called by AcquireSupport when its Shutdown method is called
+//
+// Parameters:
+//   None
+//
+// Return True if you handle observatory shutdown here. If you return False,
+// AcquireSupport will run its built-in parking and camera warmup code.
+//------------------------------------------------------------------------------
+function Shutdown(){
+    //Util.Console.PrintLine(" [useraction] Shutdown called");
+    return false;                            // Use built-in shutdown logic
+}
 
-'------------------------------------------------------------------------------
-' Shutdown()        Called by AcquireSupport when its Shutdown method is called
-'
-' Parameters:
-'   None
-'
-' Return True if you handle observatory shutdown here. If you return False,
-' AcquireSupport will run its built-in parking and camera warmup code.
-'------------------------------------------------------------------------------
-Function Shutdown()
-    ''Util.Console.PrintLine "  [useraction] Shutdown called"
-    Shutdown = False                            ' Use built-in shutdown logic
-End Function
+//------------------------------------------------------------------------------
+// AcquireImage()    Called From AcquireImages.js to acquire an image using 
+//                   special logic that completely replaces the acquisition
+//                   logic in AcquireImages. Also called from AcquireScheduler
+//                   for Scheduler runs.
+//
+// Parameters (ACP):
+//   Plan            ACP.Plan object for currently running plan
+//   Target          Current ACP.Target object 
+//   ImageSet        Current ACP.ImageSet object
+//   ImageFile:      Full path/name to image file
+//
+// Parameters (Scheduler):
+//   Plan            Scheduler Plan object for currently running plan
+//   Target          Scheduler Observation object for target
+//   ImageSet        Scheduler ImageSet object for this set of images
+//   ImageFile:      Full path/name to image file
+//
+// Environment:
+//   The scope is pointing to the target folloowing a pointing update as needed,
+//   and any periodic or adaptive autofocus has been done. Nothing else will
+//   have been done. If this function does handle the imaging, then it is 
+//   responsible for guiding, filter selection, and image acquisition. When
+//   it returns, it is assumed that the image file is at the given path (which
+//   will be constructed as usual including possible ImageFileConfig customizations. 
+//
+// Return True to permit the script to continue and acquire an image the normal
+// way in AcquireSupport. Returning False will cause the script to stop with 
+// an error. Returning the string "ok" will cause the internal AcquireImages
+// logic to be skipped, and loop back in the "Count" loop for the next iteration.
+//
+//------------------------------------------------------------------------------
+function AcquireImage(Plan, Target, ImageSet, ImageFile){
+    //Util.Console.PrintLine(" [useraction] AcquireImage called");
+    return true;
+}
 
+//------------------------------------------------------------------------------
+// ImageComplete()   Called From AcquireImages.js when normal image acquisition
+//                   and processing are complete. 
+//
+// Parameters:
+//   ImageFile:      Full path/name to image file                (read/write)
+//
+// Return True to permit the script to continue. Returning False will cause the 
+// script to stop with an error. At this point, the image processing is done
+// so you may change the image file name.
+//
+// WARNINGS: 
+//   (1) DO NOT CHANGE FILE EXTENSION! IT MUST BE .FTS.
+//   (2) IF YOU CHANGE THE FILE NAME, AUTO_STACK WILL BE DISABLED
+//------------------------------------------------------------------------------
+function ImageComplete(ImageFile){
+    //Util.Console.PrintLine(" [useraction] ImageComplete called");
+    return true;
+}
 
-'------------------------------------------------------------------------------
-' AcquireImage()    Called From AcquireImages.js to acquire an image using 
-'                   special logic that completely replaces the acquisition
-'                   logic in AcquireImages. Also called from AcquireScheduler
-'                   for Scheduler runs.
-'
-' Parameters (ACP):
-'   Plan            ACP.Plan object for currently running plan
-'   Target          Current ACP.Target object 
-'   ImageSet        Current ACP.ImageSet object
-'   ImageFile:      Full path/name to image file
-'
-' Parameters (Scheduler):
-'   Plan            Scheduler Plan object for currently running plan
-'   Target          Scheduler Observation object for target
-'   ImageSet        Scheduler ImageSet object for this set of images
-'   ImageFile:      Full path/name to image file
-'
-' Environment:
-'   The scope is pointing to the target folloowing a pointing update as needed,
-'   and any periodic or adaptive autofocus has been done. Nothing else will
-'   have been done. If this function does handle the imaging, then it is 
-'   responsible for guiding, filter selection, and image acquisition. When
-'   it returns, it is assumed that the image file is at the given path (which
-'   will be constructed as usual including possible ImageFileConfig customizations. 
-'
-' Return True to permit the script to continue and acquire an image the normal
-' way in AcquireSupport. Returning False will cause the script to stop with 
-' an error. Returning the string "ok" will cause the internal AcquireImages
-' logic to be skipped, and loop back in the "Count" loop for the next iteration.
-'
-'------------------------------------------------------------------------------
-Function AcquireImage(Plan, Target, ImageSet, ImageFile)
-    ''Util.Console.PrintLine "  [useraction] AcquireImage called"
-    AcquireImage = True
-End Function
+//------------------------------------------------------------------------------
+// TargetStart() Called from AcquireImages.js when a new target is about to 
+//               start. Also called from AcquireScheduler for ACP Scheduler runs.
+//
+// Parameters (ACP):
+//   Plan            ACP.Plan object for currently running plan
+//   Target          Current ACP.Target object 
+//   NextTarget      Next ACP.Target object Or Null
+//
+// Parameters (Scheduler):
+//   Plan            Scheduler Plan object for currently running plan
+//   Target          Scheduler Observation object for target
+//   null
+//
+// Use Util.Script.xxx to access AcquireImages/AcquireScheduler globals, etc.
+//
+// Return True to permit the target to be acquired by ACP, False will terminate
+// the observing run. Return 2 to cause the target to be skipped.
+//------------------------------------------------------------------------------
+function TargetStart(Plan, Target, NextTarget){
+    var Console = Util.Console;
+    Console.PrintLine("Custom UserAction for TargetStart called");
+    //start donuts if requested
+    if (Target.Tags !== null){
+        if (Target.Tags.Donuts !== undefined){
+            if (Target.Tags.Donuts == true){
+                var started = startDonuts();
+                if (started === ""){
+                    Console.PrintLine("**ERR: Failed to start donuts**");
+                    return false;
+                }
+            } elseif {Target.Tags.Donuts == false}{
+                var stopped = stopDonuts();
+                if (stopped === ""){
+                    Console.PrintLine("**ERR: Failed to stop donuts**");
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 
-
-'------------------------------------------------------------------------------
-' ImageComplete()   Called From AcquireImages.js when normal image acquisition
-'                   and processing are complete. 
-'
-' Parameters:
-'   ImageFile:      Full path/name to image file                (read/write)
-'
-' Return True to permit the script to continue. Returning False will cause the 
-' script to stop with an error. At this point, the image processing is done
-' so you may change the image file name.
-'
-' WARNINGS: 
-'   (1) DO NOT CHANGE FILE EXTENSION! IT MUST BE .FTS.
-'   (2) IF YOU CHANGE THE FILE NAME, AUTO_STACK WILL BE DISABLED
-'------------------------------------------------------------------------------
-Function ImageComplete(ImageFile)
-    ''Util.Console.PrintLine "  [useraction] ImageComplete called"
-    ImageComplete = True
-End Function
-
-
-'------------------------------------------------------------------------------
-' TargetStart() Called from AcquireImages.js when a new target is about to 
-'               start. Also called from AcquireScheduler for ACP Scheduler runs.
-'
-' Parameters (ACP):
-'   Plan            ACP.Plan object for currently running plan
-'   Target          Current ACP.Target object 
-'   NextTarget      Next ACP.Target object Or Null
-'
-' Parameters (Scheduler):
-'   Plan            Scheduler Plan object for currently running plan
-'   Target          Scheduler Observation object for target
-'   null
-'
-' Use Util.Script.xxx to access AcquireImages/AcquireScheduler globals, etc.
-'
-' Return True to permit the target to be acquired by ACP, False will terminate
-' the observing run. Return 2 to cause the target to be skipped.
-'------------------------------------------------------------------------------
-Function TargetStart(Plan, Target, NextTarget)
-    ''Util.Console.PrintLine "  [useraction] TargetStart called"
-    TargetStart = True
-End Function
-
-
-'------------------------------------------------------------------------------
-' TargetEnd() Called from AcquireImages.js or AcquireScheduler when the current
-'             target's processing is complete.
-'
-' Parameters:
-'   Plan            ACP.Plan object for currently running plan
-'   Target          Current ACP.Target object 
-'   NextTarget      Next ACP.Target object Or Null
-'
-' Parameters (Scheduler):
-'   Plan            Scheduler Plan object for currently running plan
-'   Target          Scheduler Observation object for target
-'   null
-'
-' Use Util.Script.xxx to access AcquireImages/AcquireScheduler globals, etc.
-'
-' Return True to permit the script to continue. Returning False will cause the 
-' observing run to terminate.
-'------------------------------------------------------------------------------
-Function TargetEnd(Plan, Target, NextTarget)
-    ''Util.Console.PrintLine "  [useraction] TargetEnd called"
-    TargetEnd = True
-End Function
+//------------------------------------------------------------------------------
+// TargetEnd() Called from AcquireImages.js or AcquireScheduler when the current
+//             target's processing is complete.
+//
+// Parameters:
+//   Plan            ACP.Plan object for currently running plan
+//   Target          Current ACP.Target object 
+//   NextTarget      Next ACP.Target object Or Null
+//
+// Parameters (Scheduler):
+//   Plan            Scheduler Plan object for currently running plan
+//   Target          Scheduler Observation object for target
+//   null
+//
+// Use Util.Script.xxx to access AcquireImages/AcquireScheduler globals, etc.
+//
+// Return True to permit the script to continue. Returning False will cause the 
+// observing run to terminate.
+//------------------------------------------------------------------------------
+function TargetEnd(Plan, Target, NextTarget){
+    var Console = Util.Console;
+    Console.PrintLine("Custom UserAction for TargetEnd called");
+    //stop donuts if requested
+    if (Target.Tags !== null){
+        if (Target.Tags.Donuts !== undefined){
+            if (Target.Tags.Donuts == true){
+                var stopped = stopDonuts();
+                if (stopped === ""){
+                    Console.PrintLine("**ERR: Failed to stop donuts**");
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 ]]>
 		</script>
 	</component>
