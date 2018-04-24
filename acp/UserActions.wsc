@@ -78,7 +78,7 @@ Edit History:
 ]]>
 	</comment>
 	<component id="UserActions">
-		<?component error="false" debug="false" ?>
+		<?component error="true" debug="true" ?>
 		<registration progid="ACP.UserActions" classid="{33F9198D-112D-4AB9-8951-F5D7FB5E79AA}" description="ACP custom user action methods" remotable="no" version="1.0">
 		</registration>
 		<public>
