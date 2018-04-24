@@ -427,7 +427,7 @@ function TargetStart(Plan, Target, NextTarget){
                     Console.PrintLine("**ERR: Failed to start donuts**");
                     return false;
                 }
-            } else if {Target.Tags.Donuts == "off"}{
+            } else if (Target.Tags.Donuts == "off"){
                 var stopped = stopDonuts();
                 if (stopped === ""){
                     Console.PrintLine("**ERR: Failed to stop donuts**");
