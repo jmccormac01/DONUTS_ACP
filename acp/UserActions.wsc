@@ -213,7 +213,7 @@ function stopDonuts(){
 // Return True to continue ACP script, False to stop ACP script
 //------------------------------------------------------------------------------
 function ScriptStart(){
-    //Util.Console.PrintLine(" [useraction] ScriptStart called");
+    Util.Console.PrintLine(" Modified UserActions for DONUTS is in effect");
     return true;
 }
 
