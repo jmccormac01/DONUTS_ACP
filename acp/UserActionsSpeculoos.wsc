@@ -143,10 +143,10 @@ Edit History:
 function startDonuts(){
     var Console = Util.Console;
     var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
-    var guideScript = workDir + "\\donuts_process.py start";
+    var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Starting donuts...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\"");
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -179,10 +179,10 @@ function startDonuts(){
 function stopDonuts(){
     var Console = Util.Console;
     var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
-    var guideScript = workDir + "\\donuts_process.py stop";
+    var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\"");
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" stop" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -227,7 +227,14 @@ function ScriptStart(){
 // No return. THIS WILL NOT BE CALLED ON A SCRIPT ERROR
 //------------------------------------------------------------------------------
 function ScriptEnd(){
-    //Util.Console.PrintLine(" [useraction] ScriptEnd called");
+    var Console = Util.Console;
+    Console.PrintLine("Custom UserAction for ScriptEnd called");
+    // stop donuts regardless to be safe
+    // this is the end of the plan so no error handling needed
+    var stopped = stopDonuts();
+    if (stopped === ""){
+        Console.PrintLine("**ERR: Failed to stop donuts**");
+    }
     return;
 }
 
@@ -312,7 +319,7 @@ function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
 //End Function
 //
 function ImageEnd(ImageFile){
-    Util.Console.PrintLine(" [useraction] ImageEnd called");
+    Util.Console.PrintLine(" Custom UserAction for ImageEnd called");
     var PL = new ActiveXObject("PinPoint.Plate");
     var FMxF = new ActiveXObject("FocusMax.Focuser");
     PL.AttachFITS(ImageFile);
