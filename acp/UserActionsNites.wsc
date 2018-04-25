@@ -182,10 +182,13 @@ function startDonuts(){
 function stopDonuts(){
     var Console = Util.Console;
     var workDir = "C:\\Users\\nites\\Documents\\GitHub\\DONUTS_ACP";
-    var guideScript = workDir + "\\donuts_process.py stop";
+    var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\Users\\nites\\Anaconda2\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\"");
+    Console.PrintLine(pyPath);
+    Console.PrintLine(workDir);
+    Console.PrintLine(guideScript);
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" stop" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -230,7 +233,14 @@ function ScriptStart(){
 // No return. THIS WILL NOT BE CALLED ON A SCRIPT ERROR
 //------------------------------------------------------------------------------
 function ScriptEnd(){
-    //Util.Console.PrintLine(" [useraction] ScriptEnd called");
+    var Console = Util.Console;
+    Console.PrintLine("Custom UserAction for ScriptEnd called");
+    // stop donuts regardless to be safe
+    // this is the end of the plan so no error handling needed
+    var stopped = stopDonuts();
+    if (stopped === ""){
+        Console.PrintLine("**ERR: Failed to stop donuts**");
+    }
     return;
 }
 
