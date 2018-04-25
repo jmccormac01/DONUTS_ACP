@@ -58,3 +58,6 @@ DB_HOST = "localhost"
 DB_USER = "speculoos"
 DB_DATABASE = "spec_ops"
 DB_PASS = 'spec_ops'
+
+# observatory location for sun calculations
+OBSERVATORY='paranal'

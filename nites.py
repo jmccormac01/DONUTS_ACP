@@ -58,3 +58,6 @@ DB_HOST = "localhost"
 DB_USER = "nites"
 DB_DATABASE = "nites_ops"
 DB_PASS = "nites"
+
+# observatory location for sun calculations
+OBSERVATORY='lapalma'

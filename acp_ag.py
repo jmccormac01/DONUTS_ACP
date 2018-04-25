@@ -2,13 +2,10 @@
 ACP + DONUTS Autoguiding
 
 Usage:
-    $> python acp_ag.py INSTRUMENT [--debug]
+    $> python acp_ag.py INSTRUMENT
 
 where INSTRUMENT can be:
-    nites
-    speculoos
-
-and --debug disables corrections being sent to the telescope
+    nites, io, europa, callisto, ganymede
 """
 import time
 import os
@@ -21,6 +18,7 @@ from datetime import (
     datetime)
 from math import (
     radians,
+    degrees,
     sin,
     cos)
 from collections import defaultdict
@@ -29,7 +27,9 @@ import glob as g
 import numpy as np
 import win32com.client
 import pymysql
+import ephem
 from astropy.io import fits
+from astropy.coordinates import EarthLocation
 from PID import PID
 from donuts import Donuts
 
@@ -66,10 +66,33 @@ def argParse():
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
                             'ganymede', 'nites'])
-    p.add_argument("--debug",
-                   help="runs the script without applying corrections",
-                   action="store_true")
     return p.parse_args()
+
+def getSunAlt(observatory):
+    """
+    Get the Sun's elevation as an emergency check
+
+    Parameters
+    ----------
+    observatory : astropy.coordinates.EarthLocation
+        Location of the current observatory
+
+    Returns
+    -------
+    alt : float
+        Altitude of the Sun
+
+    Raises
+    ------
+    None
+    """
+    obs = ephem.Observer()
+    obs.lon = str(observatory.lon.value)
+    obs.lat = str(observatory.lat.value)
+    obs.elev = observatory.height.value
+    obs.date = datetime.utcnow()
+    sun = ephem.Sun(obs)
+    return degrees(sun.alt)
 
 def strtime(dt):
     """
@@ -90,78 +113,6 @@ def strtime(dt):
     None
     """
     return dt.strftime('%Y-%m-%d %H:%M:%S')
-
-# check the telescope
-def scopeCheck(myScope, verbose):
-    """
-    Check the telescope and connect
-
-    Parameters
-    ----------
-    myScope : ACP.Telescope object
-        telescope object for control
-    verbose : string
-        Level of verbosity
-
-    Returns
-    -------
-    connected : boolean
-        Is the telescope currently connected?
-    can : array-like
-        List of things the telescope can do
-    site : array-like
-        List of observatory site information
-
-    Raises
-    ------
-    None
-    """
-    can, site = [], []
-    connected = myScope.Connected
-    if str(connected) == 'True' and verbose == "full":
-        can.append(myScope.CanPark)
-        can.append(myScope.CanPulseGuide)
-        can.append(myScope.CanSetGuideRates)
-        can.append(myScope.CanSetPierSide)
-        can.append(myScope.CanSetTracking)
-        can.append(myScope.CanSlew)
-        can.append(myScope.CanSlewAltAz)
-        can.append(myScope.CanSlewAltAzAsync)
-        can.append(myScope.CanSlewAsync)
-        can.append(myScope.CanSync)
-        can.append(myScope.CanUnpark)
-        can.append(myScope.CanSyncAltAz)
-        can.append(myScope.CanSetRightAscensionRate)
-        can.append(myScope.CanSetPark)
-        can.append(myScope.CanSetDeclinationRate)
-        can.append(myScope.CanFindHome)
-        site.append(myScope.Name)
-        site.append(myScope.AlignmentMode) # 0,1,2 - AltAz, Polar, Polar German
-        site.append(myScope.SiteElevation)
-        site.append(myScope.SiteLatitude)
-        site.append(myScope.SiteLongitude)
-        print("\n-------------------------------------------------")
-        print("                Functionality Check")
-        print("-------------------------------------------------\n")
-        print("Telescope is connected: " + str(connected))
-        print("Scope can/cannot:")
-        print("                  Park: " + str(can[0]))
-        print("                Unpark: " + str(can[10]))
-        print("            PulseGuide: " + str(can[1]))
-        print("         SetGuideRates: " + str(can[2]))
-        print("           SetPierSide: " + str(can[3]))
-        print("           SetTracking: " + str(can[4]))
-        print("                  Slew: " + str(can[5]))
-        print("             SlewAltAz: " + str(can[6]))
-        print("        SlewAltAzAsync: " + str(can[7]))
-        print("             SlewAsync: " + str(can[8]))
-        print("                  Sync: " + str(can[9]))
-        print("             SyncAltAz: " + str(can[11]))
-        print(" SetRightAscensionRate: " + str(can[12]))
-        print("               SetPark: " + str(can[13]))
-        print("    SetDeclinationRate: " + str(can[14]))
-        print("              FindHome: " + str(can[12]))
-    return connected, can, site
 
 # apply guide corrections
 def guide(x, y, images_to_stabilise):
@@ -221,14 +172,15 @@ def guide(x, y, images_to_stabilise):
             CURRENT_MAX_SHIFT = MAX_ERROR_PIXELS
             # kill anything that is > sigma_buffer sigma buffer stats
             if len(BUFF_X) < GUIDE_BUFFER_LENGTH and len(BUFF_Y) < GUIDE_BUFFER_LENGTH:
-                print('Filling AG stats buffer...')
+                logMessageToDb(args.instrument, 'Filling AG stats buffer...')
                 sigma_x = 0.0
                 sigma_y = 0.0
             else:
                 sigma_x = np.std(BUFF_X)
                 sigma_y = np.std(BUFF_Y)
                 if abs(x) > SIGMA_BUFFER * sigma_x or abs(y) > SIGMA_BUFFER * sigma_y:
-                    print('Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
+                    logMessageToDb(args.instrument,
+                                   'Guide error > {} sigma * buffer errors, ignoring...'.format(SIGMA_BUFFER))
                     # store the original values in the buffer, even if correction
                     # was too big, this will allow small outliers to be caught
                     BUFF_X.append(x)
@@ -237,7 +189,7 @@ def guide(x, y, images_to_stabilise):
                 else:
                     pass
         else:
-            print('Ignoring AG buffer during stabilisation')
+            logMessageToDb(args.instrument, 'Ignoring AG buffer during stabilisation')
             CURRENT_MAX_SHIFT = MAX_ERROR_STABIL_PIXELS
             sigma_x = 0.0
             sigma_y = 0.0
@@ -256,7 +208,7 @@ def guide(x, y, images_to_stabilise):
                 pidy = CURRENT_MAX_SHIFT
             elif pidy <= -CURRENT_MAX_SHIFT:
                 pidy = -CURRENT_MAX_SHIFT
-        print("PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
+        logMessageToDb(args.instrument, "PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
 
         # make another check that the post PID values are not > Max allowed
         # using >= allows for the stabilising runs to get through
@@ -285,7 +237,7 @@ def guide(x, y, images_to_stabilise):
             myScope.PulseGuide(DIRECTIONS['-x'], guide_time_x)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.01)
-        print("Guide correction Applied")
+        logMessageToDb(args.instrument, "Guide correction Applied")
         # store the original values in the buffer
         # only if we are not stabilising
         if images_to_stabilise < 0:
@@ -293,9 +245,9 @@ def guide(x, y, images_to_stabilise):
             BUFF_Y.append(y)
         return True, pidx, pidy, sigma_x, sigma_y
     else:
-        print("Telescope NOT connected!")
-        print("Please connect Telescope via ACP!")
-        print("Ignoring corrections!")
+        logMessageToDb(args.instrument, "Telescope NOT connected!")
+        logMessageToDb(args.instrument, "Please connect Telescope via ACP!")
+        logMessageToDb(args.instrument, "Ignoring corrections!")
         return False, 0.0, 0.0, 0.0, 0.0
 
 # log guide corrections to file
@@ -310,26 +262,34 @@ def logShiftsToFile(logfile, loglist, header=False):
         Path to the logfile
     log_list : array like
         List of items to log, see order of items below:
-        ref : str
+        night : string
+            Date of the night
+        ref : string
             Name of the current reference image
         check : string
             Name of the current guide image
-        solution_x : float
-            Shift measured in X direction
-        solution_y : float
-            Shift measured in Y direction
-        culled_max_shift_x : string
-            Culled X measurement if > max allowed shift (y | n)
-        culled_max_shift_y : string
-            Culled Y measurement if > max allowed shift (y | n)
-        pid_X : float
+        stabilised : string
+            Telescope stabilised yet? (y | n)
+        shift_x : float
+            Raw shift measured in X direction
+        shift_y : float
+            Raw shift measured in Y direction
+        pre_pid_X : float
+            X correction sent to the PID loop
+        pre_pid_y : float
+            Y correction sent to the PID loop
+        post_pid_X : float
             X correction sent to the mount, post PID loop
-        pid_y : float
+        post_pid_y : float
             Y correction sent to the mount, post PID loop
         std_buff_x : float
             Sttdev of X AG value buffer
         std_buff_y : float
             Sttdev of Y AG value buffer
+        culled_max_shift_x : string
+            Culled X measurement if > max allowed shift (y | n)
+        culled_max_shift_y : string
+            Culled Y measurement if > max allowed shift (y | n)
     header : boolean
         Flag to set writing the log file header. This is done
         at the start of the night only
@@ -343,7 +303,8 @@ def logShiftsToFile(logfile, loglist, header=False):
     None
     """
     if header:
-        line = "Ref  Check  sol_x  sol_y  cull_x  cull_y  pid_x  pid_y  std_buff_x  std_buff_y"
+        line = "night  ref  check  stable  shift_x  shift_y  pre_pid_x  pre_pid_y  " \
+               "post_pid_x  post_pid_y  std_buff_x  std_buff_y  culled_x  culled_y"
     else:
         line = "  ".join(loglist)
     with open(logfile, "a") as outfile:
@@ -395,16 +356,30 @@ def logShiftsToDb(qry_args):
     None
     """
     qry = """
-        INSERT INTO autoguider_log
-        (reference, comparison, solution_x, solution_y,
-         culled_max_shift_x, culled_max_shift_y,
-         pid_x, pid_y, std_buff_x, std_buff_y)
+        INSERT INTO autoguider_log_new
+        (night, reference, comparison, stabilised, shift_x, shift_y,
+         pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, std_buff_x,
+         std_buff_y, culled_max_shift_x, culled_max_shift_y)
         VALUES
-        (%s, %s, %s, %s, %s,
-         %s, %s, %s, %s, %s)
+        (%s, %s, %s, %s, %s, %s, %s
+         %s, %s, %s, %s, %s, %s, %s)
         """
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
+
+def logMessageToDb(telescope, message):
+    """
+    """
+    qry = """
+        INSERT INTO autoguider_info_log
+        (telescope, message)
+        VALUES
+        (%s, %s)
+        """
+    qry_args = (telescope, message)
+    with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
+        cur.execute(qry, qry_args)
+
 
 # get evening or morning
 def getAmOrPm():
@@ -452,12 +427,13 @@ def getDataDir():
     """
     token = getAmOrPm()
     d = date.today()-timedelta(days=token)
-    x = "{:d}{:02d}{:02d}".format(d.year, d.month, d.day)
-    data_loc = "{}\\{}".format(BASE_DIR, x)
+    night = "{:d}{:02d}{:02d}".format(d.year, d.month, d.day)
+    night_str = "{:d}-{:02d}-{:02d}".format(d.year, d.month, d.day)
+    data_loc = "{}\\{}".format(BASE_DIR, night)
     if os.path.exists(data_loc):
-        return data_loc
+        return data_loc, night_str
     else:
-        return None
+        return None, night_str
 
 # wait for the newest image
 def waitForImage(current_field, n_images, current_filter, current_data_dir):
@@ -496,7 +472,7 @@ def waitForImage(current_field, n_images, current_filter, current_data_dir):
     """
     while 1:
         # check for new data directory, i.e. tomorrow
-        new_data_dir = getDataDir()
+        new_data_dir, _ = getDataDir()
         if new_data_dir != current_data_dir:
             return ag_new_day, None, None, None
         # check for new images
@@ -516,11 +492,13 @@ def waitForImage(current_field, n_images, current_filter, current_data_dir):
             except FileNotFoundError:
                 # if the file cannot be accessed (not completely written to disc yet)
                 # cycle back and try again
-                print('Problem accessing fits file {}, skipping...'.format(newest_image))
+                logMessageToDb(args.instrument,
+                               'Problem accessing fits file {}, skipping...'.format(newest_image))
                 continue
             except OSError:
                 # this catches the missing header END card
-                print('Problem accessing fits file {}, skipping...'.format(newest_image))
+                logMessageToDb(args.instrument,
+                               'Problem accessing fits file {}, skipping...'.format(newest_image))
                 continue
             # new start? if so, return the newest image info
             if current_field == "" and current_filter == "":
@@ -696,13 +674,8 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
 
-    # debugging mode?
-    if args.debug:
-        print("\n**********************")
-        print("* DEBUGGING Mode ON! *")
-        print("**********************\n")
-        print("[SIM] Connecting to telescope...")
-        time.sleep(3)
+    # get the observatory information
+    observatory = EarthLocation.of_site(OBSERVATORY)
 
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
@@ -723,24 +696,26 @@ if __name__ == "__main__":
         sleep_time = 10
         # loop while waiting on data directory & scope to be connected
         while not data_loc:
-            data_loc = getDataDir()
+            data_loc, night = getDataDir()
             if data_loc:
-                print("Found data directory: {}".format(data_loc))
+                logMessageToDb(args.instrument,
+                               "Found data directory: {}".format(data_loc))
                 os.chdir(data_loc)
                 break
             if not data_loc:
-                print("[{}] No data directory yet...".format(strtime(datetime.utcnow())))
+                logMessageToDb(args.instrument,
+                               "[{}] No data directory yet...".format(strtime(datetime.utcnow())))
                 sleep_time = 30
             time.sleep(sleep_time)
 
         # connect to ACP only after the data directory is found
-        if not args.debug:
-            print("Checking for the telescope...")
-            myScope = win32com.client.Dispatch("ACP.Telescope")
-            connected, can, site = scopeCheck(myScope, "full")
-            if not connected:
-                print('Data directory exists but the telescope is not connected, quitting!')
-                sys.exit(1)
+        logMessageToDb(args.instrument, "Checking for the telescope...")
+        myScope = win32com.client.Dispatch("ACP.Telescope")
+        connected = myScope.Connected
+        if not connected:
+            logMessageToDb(args.instrument,
+                           'Data directory exists but the telescope is not connected, quitting!')
+            sys.exit(1)
 
         # if we get to here we assume we have found the data directory
         # and that the scope is connected
@@ -773,18 +748,19 @@ if __name__ == "__main__":
                     setReferenceImage(current_field, current_filter, last_file, args.instrument)
                     ref_file = "{}\\{}".format(AUTOGUIDER_REF_DIR, last_file)
         except IOError:
-            print("Problem opening {}...".format(last_file))
-            print("Breaking back to check for new day...")
+            logMessageToDb(args.instrument, "Problem opening {}...".format(last_file))
+            logMessageToDb(args.instrument, "Breaking back to check for new day...")
             continue
 
         # finally, load up the reference file for this field/filter
-        print("Ref_File: {}".format(ref_file))
+        logMessageToDb(args.instrument, "Ref_File: {}".format(ref_file))
         ref_track[current_field][current_filter] = ref_file
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
         # number of images alloed during initial pull in
         # -ve numbers mean ag should have stabilised
         images_to_stabilise = IMAGES_TO_STABILISE
+        stabilised = 'n'
 
         # Now wait on new images
         while 1:
@@ -795,9 +771,10 @@ if __name__ == "__main__":
             if ag_status == ag_new_day:
                 break
             elif ag_status == ag_new_field or ag_status == ag_new_filter:
-                print("New field/filter detected, looking for previous reference image...")
+                logMessageToDb(args.instrument,
+                               "New field/filter detected, looking for previous reference image...")
                 # reset the PID coeffs to not carry performance across objects
-                print('Resetting PID loop for new field...')
+                logMessageToDb(args.instrument, 'Resetting PID loop for new field...')
                 PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
                 PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
                 PIDx.setPoint(PID_COEFFS['set_x'])
@@ -807,23 +784,24 @@ if __name__ == "__main__":
                     donuts_ref = Donuts(ref_file)
                     images_to_stabilise = IMAGES_TO_STABILISE
                 except KeyError:
-                    print('No reference in ref_track for this field/filter')
-                    print('Skipping back to reference image checks...')
+                    logMessageToDb(args.instrument, 'No reference in ref_track for this field/filter')
+                    logMessageToDb(args.instrument, 'Skipping back to reference image checks...')
                     break
             else:
-                print("Same field and same filter, continuing...")
-                print("REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
-                                                      check_file, current_filter))
+                logMessageToDb(args.instrument, "Same field and same filter, continuing...")
+                logMessageToDb(args.instrument,
+                               "REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
+                                                               check_file, current_filter))
                 images_to_stabilise -= 1
                 # if we are done stabilising, reset the PID loop
                 if images_to_stabilise == 0:
-                    print('Stabilisation complete, reseting PID loop...')
+                    logMessageToDb(args.instrument, 'Stabilisation complete, reseting PID loop...')
                     PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
                     PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
                     PIDx.setPoint(PID_COEFFS['set_x'])
                     PIDy.setPoint(PID_COEFFS['set_y'])
                 elif images_to_stabilise > 0:
-                    print('Stabilising using P=1.0, I=0.0, D=0.0')
+                    logMessageToDb(args.instrument, 'Stabilising using P=1.0, I=0.0, D=0.0')
                     PIDx = PID(1.0, 0.0, 0.0)
                     PIDy = PID(1.0, 0.0, 0.0)
                     PIDx.setPoint(PID_COEFFS['set_x'])
@@ -833,8 +811,8 @@ if __name__ == "__main__":
             try:
                 h2 = fits.open(check_file)
             except IOError:
-                print("Problem opening CHECK: {}...".format(check_file))
-                print("Breaking back to look for new file...")
+                logMessageToDb(args.instrument, "Problem opening CHECK: {}...".format(check_file))
+                logMessageToDb(args.instrument, "Breaking back to look for new file...")
                 continue
 
             # reset culled tags
@@ -842,55 +820,72 @@ if __name__ == "__main__":
             culled_max_shift_y = 'n'
             # work out shift here
             shift = donuts_ref.measure_shift(check_file)
-            solution_x = shift.x.value
-            solution_y = shift.y.value
-            print("x shift: {:.2f}".format(float(solution_x)))
-            print("y shift: {:.2f}".format(float(solution_y)))
+            shift_x = shift.x.value
+            shift_y = shift.y.value
+            logMessageToDb(args.instrument, "x shift: {:.2f}".format(float(shift_x)))
+            logMessageToDb(args.instrument, "y shift: {:.2f}".format(float(shift_y)))
             # revoke stabilisation early if shift less than 2 pixels
-            if abs(solution_x) <= 2.0 and abs(solution_y) < 2.0 and images_to_stabilise > 0:
+            if abs(shift_x) <= 2.0 and abs(shift_y) < 2.0 and images_to_stabilise > 0:
                 images_to_stabilise = 1
 
-            # Check if shift great than max allowed error in post pull in state
+            # Check if shift greater than max allowed error in post pull in state
             if images_to_stabilise < 0:
-                if abs(solution_x) > MAX_ERROR_PIXELS:
-                    print("X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
+                stabilised = 'y'
+                if abs(shift_x) > MAX_ERROR_PIXELS:
+                    logMessageToDb(args.instrument,
+                                   "X shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
                     culled_max_shift_x = 'y'
-                if abs(solution_y) > MAX_ERROR_PIXELS:
-                    print("Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
+                else:
+                    pre_pid_x = shift_x
+                if abs(shift_y) > MAX_ERROR_PIXELS:
+                    logMessageToDb(args.instrument,
+                                   "Y shift > {}, applying no correction".format(MAX_ERROR_PIXELS))
                     culled_max_shift_y = 'y'
+                else:
+                    pre_pid_y = shift_y
             else:
-                print('Allowing field to stabilise, imposing new max error clip')
-                if solution_x > MAX_ERROR_STABIL_PIXELS:
-                    solution_x = MAX_ERROR_STABIL_PIXELS
-                elif solution_x < -MAX_ERROR_STABIL_PIXELS:
-                    solution_x = -MAX_ERROR_STABIL_PIXELS
-                if solution_y > MAX_ERROR_STABIL_PIXELS:
-                    solution_y = MAX_ERROR_STABIL_PIXELS
-                elif solution_y < -MAX_ERROR_STABIL_PIXELS:
-                    solution_y = -MAX_ERROR_STABIL_PIXELS
+                logMessageToDb(args.instrument,
+                               'Allowing field to stabilise, imposing new max error clip')
+                stabilised = 'n'
+                if shift_x > MAX_ERROR_STABIL_PIXELS:
+                    pre_pid_x = MAX_ERROR_STABIL_PIXELS
+                elif shift_x < -MAX_ERROR_STABIL_PIXELS:
+                    pre_pid_x = -MAX_ERROR_STABIL_PIXELS
+                else:
+                    pre_pid_x = shift_x
+
+                if shift_y > MAX_ERROR_STABIL_PIXELS:
+                    pre_pid_y = MAX_ERROR_STABIL_PIXELS
+                elif shift_y < -MAX_ERROR_STABIL_PIXELS:
+                    pre_pid_y = -MAX_ERROR_STABIL_PIXELS
+                else:
+                    pre_pid_y = shift_y
             # if either axis is off by > MAX error then stop everything, no point guiding
             # in 1 axis, need to figure out the source of the problem and run again
             if culled_max_shift_x == 'y' or culled_max_shift_y == 'y':
-                pid_x, pid_y, std_buff_x, std_buff_y = 0.0, 0.0, 0.0, 0.0
+                pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, \
+                    std_buff_x, std_buff_y = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             else:
-                if not args.debug:
-                    applied, pid_x, pid_y, std_buff_x, std_buff_y = guide(solution_x, solution_y,
-                                                                          images_to_stabilise)
-                    # !applied means no telescope, break to tomorrow
-                    if not applied:
-                        break
-                else:
-                    print("[SIM] Guide correction Applied")
-            log_list = [os.path.split(ref_file)[1],
+                applied, post_pid_x, post_pid_y, \
+                    std_buff_x, std_buff_y = guide(pre_pid_x, pre_pid_y,
+                                                   images_to_stabilise)
+                # !applied means no telescope, break to tomorrow
+                if not applied:
+                    break
+            log_list = [night,
+                        os.path.split(ref_file)[1],
                         check_file,
-                        str(round(solution_x, 2)),
-                        str(round(solution_y, 2)),
+                        stabilised,
+                        str(round(shift_x, 3)),
+                        str(round(shift_y, 3)),
+                        str(round(pre_pid_x, 3)),
+                        str(round(pre_pid_y, 3)),
+                        str(round(post_pid_x, 3)),
+                        str(round(post_pid_y, 3)),
+                        str(round(std_buff_x, 3)),
+                        str(round(std_buff_y, 3)),
                         culled_max_shift_x,
-                        culled_max_shift_y,
-                        str(round(pid_x, 2)),
-                        str(round(pid_y, 2)),
-                        str(round(std_buff_x, 2)),
-                        str(round(std_buff_y, 2))]
+                        culled_max_shift_y]
 
             # log info to file
             logShiftsToFile(LOGFILE, log_list)
