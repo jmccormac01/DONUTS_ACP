@@ -23,7 +23,8 @@ if __name__ == "__main__":
     test_dir = "C:\\donutstests"
     if not os.path.exists(test_dir):
         os.mkdir(test_dir)
-    tnow = datetime.utcnow().isoformat()
+    tnow = datetime.utcnow().isoformat().split('.')[0]
+    tnow = tnow.replace(':', '-')
     if args.action == 'start':
         os.system('type nul >> {}\\start_{}.txt'.format(test_dir, tnow))
         sys.exit(0)
