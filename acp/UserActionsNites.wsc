@@ -146,9 +146,6 @@ function startDonuts(){
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\Users\\nites\\Anaconda2\\python.exe\"";
     Console.PrintLine("Starting donuts...");
-    Console.PrintLine(pyPath);
-    Console.PrintLine(workDir);
-    Console.PrintLine(guideScript);
     var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
@@ -185,9 +182,6 @@ function stopDonuts(){
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\Users\\nites\\Anaconda2\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
-    Console.PrintLine(pyPath);
-    Console.PrintLine(workDir);
-    Console.PrintLine(guideScript);
     var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" stop" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
