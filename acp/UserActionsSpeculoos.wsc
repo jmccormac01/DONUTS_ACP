@@ -213,16 +213,16 @@ function stopDonuts(){
         return true;
     } else if (exStat == 1){
         Util.Console.PrintLine("donuts_process.py failed to stop guiding (exit status=1)");
-        return "";
+        return true;
     } else if (exStat == 2){
         Util.Console.PrintLine("donuts_process.py Unknown request (exit status=2)");
-        return "";
+        return true;
     } else if (exStat == 3){
         Util.Console.PrintLine("donuts_process.py Pyro communications error (exit status=3)");
-        return "";
+        return true;
     } else {
         Util.Console.PrintLine("donuts_process.py Unknown error (exit status=UNKNOWN)");
-        return "";
+        return true;
     }
 }
 
