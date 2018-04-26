@@ -57,7 +57,7 @@ class Autoguider(object):
         """
         os.system('cls')
         qry = """
-            SELECT
+            SELECT *
             FROM autoguider_log_new
             ORDER BY updated DESC
             LIMIT 1
