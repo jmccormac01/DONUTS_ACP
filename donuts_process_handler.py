@@ -66,7 +66,7 @@ class Autoguider(object):
                              db='spec_ops',
                              user='speculoos',
                              password='spec_ops',
-                             cursor=pymysql.cursors.DictCursor) as cur:
+                             cursorclass=pymysql.cursors.DictCursor) as cur:
             cur.execute(qry)
             result = cur.fetchone()
         if result:
@@ -91,7 +91,7 @@ class Autoguider(object):
                              db='spec_ops',
                              user='speculoos',
                              password='spec_ops',
-                             cursor=pymysql.cursors.DictCursor) as cur:
+                             cursorclass=pymysql.cursors.DictCursor) as cur:
             cur.execute(qry2)
             results = cur.fetchall()
         for row in results:
