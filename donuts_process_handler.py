@@ -8,6 +8,7 @@ import argparse as ap
 import subprocess as sp
 import Pyro4
 import pymysql
+from utils import ag_status
 
 # pylint: disable=invalid-name
 
@@ -68,14 +69,18 @@ class Autoguider(object):
                              cursor=pymysql.cursors.DictCursor) as cur:
             cur.execute(qry)
             result = cur.fetchone()
-        print('[{}]: {}:'.format(result['updated'],
-                                 result['check']))
-        print('Shifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
-                                                   result['shift_y']))
-        print('PrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
-                                                   result['pre_pid_y']))
-        print('PostPID: X: {:.3f} Y: {:.3f}'.format(result['post_pid_x'],
-                                                    result['post_pid_y']))
+        if result:
+            print('[{}]: {}:'.format(result['updated'],
+                                     result['check']))
+            print('Shifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
+                                                       result['shift_y']))
+            print('PrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
+                                                       result['pre_pid_y']))
+            print('PostPID: X: {:.3f} Y: {:.3f}'.format(result['post_pid_x'],
+                                                        result['post_pid_y']))
+        else:
+            print('No shifts in database')
+
         print('\nRecent messages:')
         qry2 = """
             SELECT * FROM autoguider_info_log
@@ -94,21 +99,33 @@ class Autoguider(object):
                                   row['message']))
 
     @Pyro4.expose
-    @Pyro4.oneway
     def start_ag(self):
         cmd = "C:\\ProgramData\\Miniconda3\\Python.exe" \
               "C:\\Users\\speculoos\\Documents\\GitHub\\DDONUTS_ACP\\acp_ag.py {}".format(self.instrument)
         self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=True)
-        self.guiding = True
+        # poll = None means running
+        if self.proc.poll() is None:
+            self.guiding = True
+            return ag_status.success
+        elif self.proc.poll() == 0:
+            self.guiding = False
+            return ag_status.failed
+        else:
+            self.guiding = False
+            return ag_status.unknown
 
     @Pyro4.expose
-    @Pyro4.oneway
     def stop_ag(self):
         self.proc.kill()
         outs, errs = self.proc.communicate()
         print(outs)
         print(errs)
-        self.guiding = False
+        if self.proc.poll() == -9:
+            self.guiding = False
+            return ag_status.success
+        else:
+            self.guiding = True
+            return ag_status.failed
 
 if __name__ == "__main__":
     args = argParse()

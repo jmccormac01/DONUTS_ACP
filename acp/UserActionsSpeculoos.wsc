@@ -142,7 +142,7 @@ Edit History:
 //------------------------------------------------------------------------------
 function startDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
+    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Starting donuts...");
@@ -159,13 +159,26 @@ function startDonuts(){
         }
     }
     var exStat = Util.GetTaskExitStatus(TID);
-    if (exStat !== 0)
-    {
-        Util.Console.PrintLine("donuts_process.py script failed, exit status = " + exStat);
-        return "";
+    if (exStat == 0){
+        Console.PrintLine("Donuts started successfully...");
+        return true;
+    } else if (exStat == 1){
+        Util.Console.PrintLine("donuts_process.py failed to start guiding (exit status=1)");
+        Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
+        return true;
+    } else if (exStat == 2){
+        Util.Console.PrintLine("donuts_process.py Unknown request (exit status=2)");
+        Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
+        return true;
+    } else if (exStat == 3){
+        Util.Console.PrintLine("donuts_process.py Pyro communications error (exit status=3)");
+        Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
+        return true;
+    } else {
+        Util.Console.PrintLine("donuts_process.py Unknown error (exit status=UNKNOWN)");
+        Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
+        return true;
     }
-    Console.PrintLine("Donuts started successfully...");
-    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -178,7 +191,7 @@ function startDonuts(){
 //------------------------------------------------------------------------------
 function stopDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS";
+    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
@@ -195,13 +208,22 @@ function stopDonuts(){
         }
     }
     var exStat = Util.GetTaskExitStatus(TID);
-    if (exStat !== 0)
-    {
-        Util.Console.PrintLine("donuts_process.py script failed, exit status = " + exStat);
+    if (exStat == 0){
+        Console.PrintLine("Donuts stopped successfully...");
+        return true;
+    } else if (exStat == 1){
+        Util.Console.PrintLine("donuts_process.py failed to stop guiding (exit status=1)");
+        return "";
+    } else if (exStat == 2){
+        Util.Console.PrintLine("donuts_process.py Unknown request (exit status=2)");
+        return "";
+    } else if (exStat == 3){
+        Util.Console.PrintLine("donuts_process.py Pyro communications error (exit status=3)");
+        return "";
+    } else {
+        Util.Console.PrintLine("donuts_process.py Unknown error (exit status=UNKNOWN)");
         return "";
     }
-    Console.PrintLine("Donuts stopped successfully...");
-    return true;
 }
 
 //------------------------------------------------------------------------------

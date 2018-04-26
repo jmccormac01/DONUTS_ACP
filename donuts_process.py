@@ -4,6 +4,7 @@ Code to start and stop the donuts second thread
 import sys
 import argparse as ap
 import Pyro4
+from utils import ag_status
 
 # pylint: disable=invalid-name
 
@@ -19,13 +20,15 @@ def argParse():
 
 if __name__ == "__main__":
     args = argParse()
-    ag = Pyro4.Proxy('PYRO:donuts@localhost:9234')
+    try:
+        ag = Pyro4.Proxy('PYRO:donuts@localhost:9234')
+    except Pyro4.errors.CommunicationError:
+        sys.exit(ag_status.pyro_connection_error)
     if args.action == 'start':
-        ag.start_ag()
-        sys.exit(0)
+        status = ag.start_ag()
+        sys.exit(status)
     elif args.action == 'stop':
-        ag.stop_ag()
-        sys.exit(0)
+        status = ag.stop_ag()
+        sys.exit(status)
     else:
-        print('Unknown input, exiting')
-        sys.exit(1)
+        sys.exit(ag_status.unknown)
