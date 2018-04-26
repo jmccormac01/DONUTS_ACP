@@ -97,7 +97,7 @@ class Autoguider(object):
     @Pyro4.oneway
     def start_ag(self):
         cmd = "C:\\ProgramData\\Miniconda3\\Python.exe" \
-              "C:\\Users\\nites\\Documents\\GitHub\\DDONUTS_ACP\\acp_ag.py {}".format(self.instrument)
+              "C:\\Users\\speculoos\\Documents\\GitHub\\DDONUTS_ACP\\acp_ag.py {}".format(self.instrument)
         self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=True)
         self.guiding = True
 
