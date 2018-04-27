@@ -46,7 +46,7 @@ class Autoguider(object):
         while True:
             print("Autoguiding: {}".format(self.guiding))
             if self.guiding:
-                self.printLastAgCorrection()
+                #self.printLastAgCorrection()
                 time.sleep(AG_ON_TIME)
             else:
                 time.sleep(AG_OFF_TIME)
