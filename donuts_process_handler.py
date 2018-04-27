@@ -71,7 +71,7 @@ class Autoguider(object):
             result = cur.fetchone()
         if result:
             print('[{}]: {}:'.format(result['updated'],
-                                     result['check']))
+                                     result['comparison']))
             print('Shifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
                                                        result['shift_y']))
             print('PrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
@@ -100,7 +100,7 @@ class Autoguider(object):
 
     @Pyro4.expose
     def start_ag(self):
-        cmd = "C:\\ProgramData\\Miniconda3\\python.exe" \
+        cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
               "C:\\Users\\speculoos\\Documents\\GitHub\\DDONUTS_ACP\\acp_ag.py {}".format(self.instrument)
         self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=True)
         # poll = None means running
