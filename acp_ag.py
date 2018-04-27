@@ -27,7 +27,7 @@ import glob as g
 import numpy as np
 import win32com.client
 import pymysql
-import ephem
+#import ephem
 from astropy.io import fits
 from astropy.coordinates import EarthLocation
 from PID import PID
@@ -68,31 +68,31 @@ def argParse():
                             'ganymede', 'nites'])
     return p.parse_args()
 
-def getSunAlt(observatory):
-    """
-    Get the Sun's elevation as an emergency check
-
-    Parameters
-    ----------
-    observatory : astropy.coordinates.EarthLocation
-        Location of the current observatory
-
-    Returns
-    -------
-    alt : float
-        Altitude of the Sun
-
-    Raises
-    ------
-    None
-    """
-    obs = ephem.Observer()
-    obs.lon = str(observatory.lon.value)
-    obs.lat = str(observatory.lat.value)
-    obs.elev = observatory.height.value
-    obs.date = datetime.utcnow()
-    sun = ephem.Sun(obs)
-    return degrees(sun.alt)
+#def getSunAlt(observatory):
+#    """
+#    Get the Sun's elevation as an emergency check
+#
+#    Parameters
+#    ----------
+#    observatory : astropy.coordinates.EarthLocation
+#        Location of the current observatory
+#
+#    Returns
+#    -------
+#    alt : float
+#        Altitude of the Sun
+#
+#    Raises
+#    ------
+#    None
+#    """
+#    obs = ephem.Observer()
+#    obs.lon = str(observatory.lon.value)
+#    obs.lat = str(observatory.lat.value)
+#    obs.elev = observatory.height.value
+#    obs.date = datetime.utcnow()
+#    sun = ephem.Sun(obs)
+#    return degrees(sun.alt)
 
 def strtime(dt):
     """
