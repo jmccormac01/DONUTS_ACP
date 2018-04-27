@@ -231,10 +231,11 @@ function ScriptEnd(){
     Console.PrintLine("Custom UserAction for ScriptEnd called");
     // stop donuts regardless to be safe
     // this is the end of the plan so no error handling needed
-    var stopped = stopDonuts();
-    if (stopped === ""){
-        Console.PrintLine("**ERR: Failed to stop donuts**");
-    }
+    // RENABLE LATER WHEN READY
+    //var stopped = stopDonuts();
+    //if (stopped === ""){
+    //    Console.PrintLine("**ERR: Failed to stop donuts**");
+    //}
     return;
 }
 
@@ -395,6 +396,8 @@ function ImageComplete(ImageFile){
 // the observing run. Return 2 to cause the target to be skipped.
 //------------------------------------------------------------------------------
 function TargetStart(Plan, Target, NextTarget){
+    // ENABLE LATER WHEN READY
+    /*
     var Console = Util.Console;
     Console.PrintLine("Custom UserAction for TargetStart called");
     //start donuts if requested
@@ -415,6 +418,7 @@ function TargetStart(Plan, Target, NextTarget){
             }
         }
     }
+    */
     return true;
 }
 
@@ -438,6 +442,8 @@ function TargetStart(Plan, Target, NextTarget){
 // observing run to terminate.
 //------------------------------------------------------------------------------
 function TargetEnd(Plan, Target, NextTarget){
+    // ENABLE LATER WHEN READY
+    /*
     var Console = Util.Console;
     Console.PrintLine("Custom UserAction for TargetEnd called");
     //stop donuts if requested
@@ -452,6 +458,7 @@ function TargetEnd(Plan, Target, NextTarget){
             }
         }
     }
+    */
     return true;
 }
 ]]>
