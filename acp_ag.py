@@ -364,6 +364,7 @@ def logShiftsToDb(qry_args):
         (%s, %s, %s, %s, %s, %s, %s
          %s, %s, %s, %s, %s, %s, %s)
         """
+    print(qry)
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
 
