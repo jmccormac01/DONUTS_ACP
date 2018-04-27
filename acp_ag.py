@@ -361,7 +361,7 @@ def logShiftsToDb(qry_args):
          pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, std_buff_x,
          std_buff_y, culled_max_shift_x, culled_max_shift_y)
         VALUES
-        (%s, %s, %s, %s, %s, %s, %s
+        (%s, %s, %s, %s, %s, %s, %s,
          %s, %s, %s, %s, %s, %s, %s)
         """
     print(qry)
