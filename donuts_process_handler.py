@@ -124,6 +124,7 @@ class Autoguider(object):
                 guiding_pid = int(self.proc.pid)
                 print('Killing AG script pid={}'.format(self.proc.pid))
                 os.kill(self.proc.pid, signal.CTRL_BREAK_EVENT)
+                time.sleep(5)
                 # get running python processes - check it is dead
                 pyproc = [int(p.pid) for p in psutil.process_iter() if 'python' in p.name()]
                 if guiding_pid not in pyproc:
