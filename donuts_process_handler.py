@@ -3,6 +3,7 @@ Process handler for ACP to control Donuts
 """
 import os
 import time
+import signal
 import threading
 import argparse as ap
 import subprocess as sp
@@ -125,14 +126,18 @@ class Autoguider(object):
         #    print('Kill returned -9')
         #    self.guiding = False
         #    return ag_status.success
-        if self.proc.poll() is None:
-            print('Force killing AG script')
-            os.kill(self.proc.pid)
-            self.guiding = False
-            return ag_status.success
+        if self.proc:
+            if self.proc.poll() is None:
+                print('Force killing AG script')
+                os.kill(self.proc.pid, signal.CTRL_C_EVENT)
+                self.guiding = False
+                self.proc = None
+                return ag_status.success
+            else:
+                self.guiding = True
+                return ag_status.failed
         else:
-            self.guiding = True
-            return ag_status.failed
+            print('No process to kill')
 
 if __name__ == "__main__":
     args = argParse()
