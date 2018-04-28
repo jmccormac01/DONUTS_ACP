@@ -103,7 +103,7 @@ class Autoguider(object):
     def start_ag(self):
         cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
               "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
-        self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=True)
+        self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False)
         # poll = None means running
         if self.proc.poll() is None:
             self.guiding = True
