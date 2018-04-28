@@ -107,6 +107,7 @@ class Autoguider(object):
         # poll = None means running
         if self.proc.poll() is None:
             self.guiding = True
+            print(self.proc.pid)
             return ag_status.success
         elif self.proc.poll() == 0:
             self.guiding = False
