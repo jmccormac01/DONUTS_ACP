@@ -4,6 +4,7 @@ Process handler for ACP to control Donuts
 import os
 import time
 import signal
+import psutil
 import threading
 import argparse as ap
 import subprocess as sp
@@ -103,7 +104,7 @@ class Autoguider(object):
     def start_ag(self):
         cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
               "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
-        self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False)
+        self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False, creationflags=sp.CREATE_NEW_PROCESS_GROUP)
         # poll = None means running
         if self.proc.poll() is None:
             self.guiding = True
