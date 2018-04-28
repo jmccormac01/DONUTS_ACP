@@ -118,25 +118,21 @@ class Autoguider(object):
 
     @Pyro4.expose
     def stop_ag(self):
-        #self.proc.kill()
-        #time.sleep(10)
-        #outs, errs = self.proc.communicate()
-        #print(outs)
-        #print(errs)
-        #if self.proc.poll() == -9:
-        #    print('Kill returned -9')
-        #    self.guiding = False
-        #    return ag_status.success
         if self.proc:
             if self.proc.poll() is None:
-                print('Force killing AG script')
-                os.kill(self.proc.pid, signal.CTRL_C_EVENT)
-                self.guiding = False
-                self.proc = None
-                return ag_status.success
-            else:
-                self.guiding = True
-                return ag_status.failed
+                guiding_pid = int(self.proc.pid)
+                print('Killing AG script pid={}'.format(self.proc.pid))
+                os.kill(self.proc.pid, signal.CTRL_BREAK_EVENT)
+                # get running python processes - check it is dead
+                pyproc = [int(p.pid) for p in psutil.process_iter() if 'python' in p.name()]
+                if guiding_pid not in pyproc:
+                    self.guiding = False
+                    self.proc = None
+                    return ag_status.success
+                else:
+                    print('Guiding process {} not dead!'.format(guiding_pid))
+                    self.guiding = True
+                    return ag_status.failed
         else:
             print('No process to kill')
 
