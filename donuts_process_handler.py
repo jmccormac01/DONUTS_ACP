@@ -117,10 +117,10 @@ class Autoguider(object):
     @Pyro4.expose
     def stop_ag(self):
         self.proc.kill()
-        time.sleep(5)
-        #outs, errs = self.proc.communicate()
-        #print(outs)
-        #print(errs)
+        time.sleep(10)
+        outs, errs = self.proc.communicate()
+        print(outs)
+        print(errs)
         if self.proc.poll() == -9:
             print('Kill returned -9')
             self.guiding = False
