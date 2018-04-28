@@ -31,12 +31,13 @@ def argParse():
 class Autoguider(object):
     """
     """
-    def __init__(self, instrument):
+    def __init__(self, instrument, pyro_uri):
         """
         """
         self.guiding = False
         self.proc = None
         self.instrument = instrument
+        self.pyro_uri = pyro_uri
         self.print_thread = threading.Thread(target=self.printStatus)
         self.print_thread.daemon = True
         self.print_thread.start()
@@ -46,18 +47,22 @@ class Autoguider(object):
         display current status
         """
         while True:
-            if self.guiding:
+            # clear screen
+            os.system('cls')
+            # print header
+            print(self.pyro_uri)
+            if self.guiding and self.proc:
+                print('\n[PID: {}]: Autoguiding = {}'.format(self.proc.pid, self.guiding))
                 self.printLastAgCorrection()
                 time.sleep(AG_ON_TIME)
             else:
+                print('\n[PID: ----]: Autoguiding = {}'.format(self.guiding))
                 time.sleep(AG_OFF_TIME)
 
     def printLastAgCorrection(self):
         """
         Grab the last autoguider correction
         """
-        os.system('cls')
-        print('\nAutoguiding: '.format(self.guiding))
         qry = """
             SELECT *
             FROM autoguider_log_new
@@ -74,12 +79,12 @@ class Autoguider(object):
         if result:
             print('[{}]: {}:'.format(result['updated'],
                                      result['comparison']))
-            print('Shifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
-                                                       result['shift_y']))
-            print('PrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
-                                                       result['pre_pid_y']))
-            print('PostPID: X: {:.3f} Y: {:.3f}'.format(result['post_pid_x'],
-                                                        result['post_pid_y']))
+            print('\tShifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
+                                                         result['shift_y']))
+            print('\tPrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
+                                                         result['pre_pid_y']))
+            print('\tPostPID: X: {:.3f} Y: {:.3f}'.format(result['post_pid_x'],
+                                                          result['post_pid_y']))
         else:
             print('No shifts in database')
 
@@ -97,8 +102,8 @@ class Autoguider(object):
             cur.execute(qry2)
             results = cur.fetchall()
         for row in results:
-            print("{}: {}".format(row['updated'],
-                                  row['message']))
+            print("[{}]: {}".format(row['updated'],
+                                    row['message']))
 
     @Pyro4.expose
     def start_ag(self):
@@ -140,7 +145,7 @@ class Autoguider(object):
 
 if __name__ == "__main__":
     args = argParse()
-    ag = Autoguider(args.instrument)
+    ag = Autoguider(args.instrument, 'PYRO:donuts@localhost:9234')
     daemon = Pyro4.Daemon(host='localhost', port=9234)
     # uri = PYRO:donuts@localhost:9234
     uri = daemon.register(ag, objectId='donuts')
