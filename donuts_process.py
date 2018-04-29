@@ -22,7 +22,7 @@ if __name__ == "__main__":
     args = argParse()
     try:
         ag = Pyro4.Proxy('PYRO:donuts@localhost:9234')
-    except Pyro4.errors.CommunicationError:
+    except:
         sys.exit(ag_status.pyro_connection_error)
     if args.action == 'start':
         status = ag.start_ag()
