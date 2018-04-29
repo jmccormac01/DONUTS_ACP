@@ -10,6 +10,7 @@ and the ACP plans will continue with no guiding.
 Pyro4 URI = PYRO:donuts@localhost:9234
 """
 import os
+import sys
 import time
 import signal
 import threading
@@ -277,6 +278,7 @@ class Autoguider(object):
 
 if __name__ == "__main__":
     args = argParse()
+    sys.excepthook = Pyro4.util.excepthook
     daemon = Pyro4.Daemon(host='localhost', port=9234)
     ag = Autoguider(args.instrument, 'PYRO:donuts@localhost:9234', daemon)
     uri = daemon.register(ag, objectId='donuts')
