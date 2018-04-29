@@ -73,12 +73,12 @@ Edit History:
     28-Apr-16   8.1 - GEM:1458 Add AcquireImage user action.
     13-Apr-18   Adds TargetStart and TargetEnd support for triggering Donuts - JMCC
     14-Apr-18   Spotted script was mix of VBSCRIPT & JSCRIPT, ported it to JScript - JMCC
-
+    29-Apr-18   Settled on final layout, TargetStart() and ScriptEnd() to handle donuts - JMCC
 -----------------------------------------------------------------------------------------
 ]]>
 	</comment>
 	<component id="UserActions">
-		<?component error="true" debug="true" ?>
+		<?component error="false" debug="false" ?>
 		<registration progid="ACP.UserActions" classid="{33F9198D-112D-4AB9-8951-F5D7FB5E79AA}" description="ACP custom user action methods" remotable="no" version="1.0">
 		</registration>
 		<public>
@@ -129,8 +129,6 @@ Edit History:
 		<object id="Util" progid="ACP.Util" events="false" reference="false"/>
 		<script id="UserActions" language="JScript">
 <![CDATA[
-//Option Explicit //- this was from old VBScript, commented out in JScript
-
 
 //------------------------------------------------------------------------------
 // startDonuts()     Called if TAG Donuts=true
@@ -322,24 +320,6 @@ function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
 //       ACQUIREIMAGES IS COMPLETELY FINISHED WITH THE IMAGE FILE (EXCEPT
 //       For AUTOSTACKING. SEE NOTE BELOW!)
 //------------------------------------------------------------------------------
-//
-// original VBScript code from before adding donuts - Note: no error checking here
-//
-//Function ImageEnd(ImageFile)
-//Util.Console.PrintLine " [useraction] ImageEnd called"
-//Dim PL, FMxF
-//Set PL = CreateObject("PinPoint.Plate")
-//Set FMxF = CreateObject("FocusMax.Focuser")
-//PL.AttachFITS ImageFile
-//PL.WriteFITSDouble "FOCUSTEM", FMxF.Temperature, 1
-//PL.WriteFITSDouble "FOCUSPOS", FMxF.Position, 0
-//PL.UpdateFITS
-//PL.DetachFITS
-//Set FMxF = nothing
-//Set PL = nothing
-//ImageEnd = True
-//End Function
-//
 function ImageEnd(ImageFile){
     Util.Console.PrintLine(" Custom UserAction for ImageEnd called");
     var PL = new ActiveXObject("PinPoint.Plate");
@@ -488,20 +468,6 @@ function TargetStart(Plan, Target, NextTarget){
 // observing run to terminate.
 //------------------------------------------------------------------------------
 function TargetEnd(Plan, Target, NextTarget){
-    var Console = Util.Console;
-    Console.PrintLine("Custom UserAction for TargetEnd called");
-    //stop donuts if requested
-    if (Target.Tags !== null){
-        if (Target.Tags.Donuts !== undefined){
-            if (Target.Tags.Donuts == "on"){
-                var stopped = stopDonuts();
-                if (stopped === ""){
-                    Console.PrintLine("**ERR: Failed to stop donuts**");
-                    return false;
-                }
-            }
-        }
-    }
     return true;
 }
 ]]>

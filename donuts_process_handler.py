@@ -107,20 +107,24 @@ class Autoguider(object):
 
     @Pyro4.expose
     def start_ag(self):
-        cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
-              "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
-        self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False, creationflags=sp.CREATE_NEW_PROCESS_GROUP)
-        # poll = None means running
-        if self.proc.poll() is None:
-            self.guiding = True
-            print(self.proc.pid)
-            return ag_status.success
-        elif self.proc.poll() == 0:
-            self.guiding = False
-            return ag_status.failed
+        if self.proc is None::
+            cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
+                  "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
+            self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False, creationflags=sp.CREATE_NEW_PROCESS_GROUP)
+            # poll = None means running
+            if self.proc.poll() is None:
+                self.guiding = True
+                print(self.proc.pid)
+                return ag_status.success
+            elif self.proc.poll() == 0:
+                self.guiding = False
+                return ag_status.failed
+            else:
+                self.guiding = False
+                return ag_status.unknown
         else:
-            self.guiding = False
-            return ag_status.unknown
+            print('Already a guiding process running, cannot run 2, skipping!')
+            return ag_status.failed
 
     @Pyro4.expose
     def stop_ag(self):
@@ -142,6 +146,7 @@ class Autoguider(object):
                     return ag_status.failed
         else:
             print('No process to kill')
+            return ag_status.success
 
 if __name__ == "__main__":
     args = argParse()
@@ -149,5 +154,4 @@ if __name__ == "__main__":
     daemon = Pyro4.Daemon(host='localhost', port=9234)
     # uri = PYRO:donuts@localhost:9234
     uri = daemon.register(ag, objectId='donuts')
-    print(uri)
     daemon.requestLoop()
