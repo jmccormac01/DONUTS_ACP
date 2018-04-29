@@ -14,8 +14,8 @@ def argParse():
     """
     p = ap.ArgumentParser()
     p.add_argument('action',
-                   help='start | stop the donuts process',
-                   choices=['start', 'stop'])
+                   help='\'start\' | \'stop\' the donuts process (or \'shutdown\' donuts process handler)',
+                   choices=['start', 'stop', 'shutdown'])
     return p.parse_args()
 
 if __name__ == "__main__":
@@ -30,5 +30,7 @@ if __name__ == "__main__":
     elif args.action == 'stop':
         status = ag.stop_ag()
         sys.exit(status)
+    elif args.action == 'shutdown':
+        ag.shutdown()
     else:
         sys.exit(ag_status.unknown)

@@ -1,13 +1,21 @@
 """
 Process handler for ACP to control Donuts
+
+This code should be started when the control machine is booted.
+It will run all the time and spawn AG processes when requested.
+If this code is not running, the AG requests will not be met
+and the ACP plans will continue with no guiding.
+
+
+Pyro4 URI = PYRO:donuts@localhost:9234
 """
 import os
 import time
 import signal
-import psutil
 import threading
 import argparse as ap
 import subprocess as sp
+import psutil
 import Pyro4
 import pymysql
 from utils import ag_status
@@ -20,6 +28,19 @@ AG_OFF_TIME = 30
 def argParse():
     """
     Parse the command line args
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    args : argparse object
+        Object containing command line arguments
+
+    Raises
+    ------
+    None
     """
     p = ap.ArgumentParser()
     p.add_argument('instrument',
@@ -30,21 +51,59 @@ def argParse():
 
 class Autoguider(object):
     """
+    Autoguider class
+
+    Parameters
+    ----------
+    instrument : string
+        Name of the telescope we are guiding on
+    pyro_uri : string
+        URI on which to find the Pryo connection
+    daemon : Pyro4.daemon
+        Instance of the Pyro4 daemon. This is used
+        to shutdown the request loop cleanly
+
+    Returns
+    -------
+    ag_status : int
+        Status of the autoguiding after various interactions
+
+    Raises
+    ------
+    None
     """
-    def __init__(self, instrument, pyro_uri):
+    def __init__(self, instrument, pyro_uri, daemon):
         """
+        Initialise the class
+
+        See class docstring above
         """
         self.guiding = False
         self.proc = None
         self.instrument = instrument
         self.pyro_uri = pyro_uri
+        self.daemon = daemon
         self.print_thread = threading.Thread(target=self.printStatus)
         self.print_thread.daemon = True
         self.print_thread.start()
 
     def printStatus(self):
         """
-        display current status
+        Display current status. This method is looped in the
+        Pyro4 request loop, displaying the current status of
+        the guiding system
+
+        Parameters
+        ----------
+        self : the class self object
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        None
         """
         while True:
             # clear screen
@@ -61,7 +120,20 @@ class Autoguider(object):
 
     def printLastAgCorrection(self):
         """
-        Grab the last autoguider correction
+        Grab the last autoguider correction and recent info messages
+
+        Parameters
+        ----------
+        self : the class self object
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        None
+
         """
         qry = """
             SELECT *
@@ -107,7 +179,23 @@ class Autoguider(object):
 
     @Pyro4.expose
     def start_ag(self):
-        if self.proc is None::
+        """
+        Exposed method to trigger donuts guiding
+
+        Parameters
+        ----------
+        self : the class self object
+
+        Returns
+        -------
+        ag_status : int
+            Status of the autoguider after triggering
+
+        Raises
+        ------
+        None
+        """
+        if self.proc is None:
             cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
                   "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
             self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False, creationflags=sp.CREATE_NEW_PROCESS_GROUP)
@@ -128,6 +216,22 @@ class Autoguider(object):
 
     @Pyro4.expose
     def stop_ag(self):
+        """
+        Exposed method to stop donuts guiding
+
+        Parameters
+        ----------
+        self : the class self object
+
+        Returns
+        -------
+        ag_status : int
+            Status of the autoguider stop request
+
+        Raises
+        ------
+        None
+        """
         if self.proc:
             if self.proc.poll() is None:
                 guiding_pid = int(self.proc.pid)
@@ -148,10 +252,35 @@ class Autoguider(object):
             print('No process to kill')
             return ag_status.success
 
+    @Pyro4.expose
+    @Pyro4.oneway
+    def shutdown(self):
+        """
+        Exposed method to shutdown the donuts process handler (this script)
+
+        Parameters
+        ----------
+        self : the class self object
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        None
+        """
+        print('Shutting down the donuts process handler...')
+        # check for a guiding process, just in case
+        self.stop_ag()
+        self.daemon.shutdown()
+
 if __name__ == "__main__":
     args = argParse()
-    ag = Autoguider(args.instrument, 'PYRO:donuts@localhost:9234')
     daemon = Pyro4.Daemon(host='localhost', port=9234)
-    # uri = PYRO:donuts@localhost:9234
+    ag = Autoguider(args.instrument, 'PYRO:donuts@localhost:9234', daemon)
     uri = daemon.register(ag, objectId='donuts')
     daemon.requestLoop()
+    print('Exiting Donuts process handler')
+    daemon.close()
+    print('Daemon closed')
