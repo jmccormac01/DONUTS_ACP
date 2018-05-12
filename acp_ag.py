@@ -18,7 +18,6 @@ from datetime import (
     datetime)
 from math import (
     radians,
-    degrees,
     sin,
     cos)
 from collections import defaultdict
@@ -27,9 +26,14 @@ import glob as g
 import numpy as np
 import win32com.client
 import pymysql
-#import ephem
 from astropy.io import fits
-from astropy.coordinates import EarthLocation
+import astropy.units as u
+from astropy.time import Time
+from astropy.coordinates import (
+    EarthLocation,
+    AltAz,
+    get_sun
+    )
 from PID import PID
 from donuts import Donuts
 
@@ -37,9 +41,6 @@ from donuts import Donuts
 # pylint: disable = redefined-outer-name
 # pylint: disable = line-too-long
 # pylint: disable = no-member
-
-# TODO : Test the rotation of ccd axes
-# TODO : Log the solution, sent_to_pid, post_pid corrections
 
 # autoguider status flags
 ag_new_day, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
@@ -68,31 +69,28 @@ def argParse():
                             'ganymede', 'nites'])
     return p.parse_args()
 
-#def getSunAlt(observatory):
-#    """
-#    Get the Sun's elevation as an emergency check
-#
-#    Parameters
-#    ----------
-#    observatory : astropy.coordinates.EarthLocation
-#        Location of the current observatory
-#
-#    Returns
-#    -------
-#    alt : float
-#        Altitude of the Sun
-#
-#    Raises
-#    ------
-#    None
-#    """
-#    obs = ephem.Observer()
-#    obs.lon = str(observatory.lon.value)
-#    obs.lat = str(observatory.lat.value)
-#    obs.elev = observatory.height.value
-#    obs.date = datetime.utcnow()
-#    sun = ephem.Sun(obs)
-#    return degrees(sun.alt)
+def getSunAlt(observatory):
+    """
+    Get the Sun's elevation as an emergency check
+
+    Parameters
+    ----------
+    observatory : astropy.coordinates.EarthLocation
+        Location of the current observatory
+
+    Returns
+    -------
+    alt : float
+        Altitude of the Sun
+
+    Raises
+    ------
+    None
+    """
+    now = Time(datetime.utcnow(), format='datetime', scale='utc')
+    altazframe = AltAz(obstime=now, location=observatory)
+    sunaltaz = get_sun(now).transform_to(altazframe)
+    return sunaltaz.alt.value
 
 def strtime(dt):
     """
@@ -369,6 +367,22 @@ def logShiftsToDb(qry_args):
 
 def logMessageToDb(telescope, message):
     """
+    Log outout messages to the database
+
+    Parameters
+    ----------
+    telescope : str
+        Name of the instrument being autoguided
+    message : str
+        Output message to log
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
     """
     qry = """
         INSERT INTO autoguider_info_log
@@ -436,13 +450,15 @@ def getDataDir():
         return None, night_str
 
 # wait for the newest image
-def waitForImage(current_field, n_images, current_filter, current_data_dir):
+def waitForImage(current_field, n_images, current_filter,
+                 current_data_dir, observatory):
     """
     Wait for new images. Several things can happen:
         1. A new image comes in of new field and filter (new start)
         2. A new image comes in but of a new field (new field)
         3. A new image comes in but with a different filter (new filter)
         4. No change occurs and same field and filter apply (no_change)
+        5. A new day's data directory is detected, or sun_alt > 0 (new_day)
 
     Parameters
     ----------
@@ -454,6 +470,8 @@ def waitForImage(current_field, n_images, current_filter, current_data_dir):
         name of the current filter
     current_data_dir : string
         path to current data directory
+    observatory : astropy.EarthLocation
+        location of the observing site
 
     Returns
     -------
@@ -474,6 +492,10 @@ def waitForImage(current_field, n_images, current_filter, current_data_dir):
         # check for new data directory, i.e. tomorrow
         new_data_dir, _ = getDataDir()
         if new_data_dir != current_data_dir:
+            return ag_new_day, None, None, None
+        # secondary check, check the sun altitude, quit if > 0
+        sunalt = getSunAlt(observatory)
+        if sunalt > 0:
             return ag_new_day, None, None, None
         # check for new images
         t = g.glob('*{}'.format(IMAGE_EXTENSION))
@@ -674,8 +696,8 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
 
-    # get the observatory information
-    observatory = EarthLocation.of_site(OBSERVATORY)
+    # set up observatory location from coords in telescope file
+    observatory = EarthLocation(lat=OLAT*u.deg, lon=OLON*u.deg, height=ELEV*u.m)
 
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
@@ -725,12 +747,14 @@ if __name__ == "__main__":
         logShiftsToFile(LOGFILE, [], header=True)
         # check for any data in there
         n_images = len(templist)
-        # if no images appear before the end of the night, roll out to next night
-        # otherwise report the last_file in the directory
+        # if no images appear before the end of the night
+        # just die quietly
         if n_images == 0:
-            ag_status, last_file, _, _ = waitForImage("", n_images, "", data_loc)
+            ag_status, last_file, _, _ = waitForImage("", n_images, "", data_loc, observatory)
             if ag_status == ag_new_day:
-                continue
+                logMessageToDb(args.instrument,
+                               "New day detected, ending process...")
+                sys.exit()
         else:
             last_file = max(templist, key=os.path.getctime)
 
@@ -767,9 +791,12 @@ if __name__ == "__main__":
             ag_status, check_file, current_field, current_filter = waitForImage(current_field,
                                                                                 n_images,
                                                                                 current_filter,
-                                                                                data_loc)
+                                                                                data_loc,
+                                                                                observatory)
             if ag_status == ag_new_day:
-                break
+                logMessageToDb(args.instrument,
+                               "New day detected, ending process...")
+                sys.exit()
             elif ag_status == ag_new_field or ag_status == ag_new_filter:
                 logMessageToDb(args.instrument,
                                "New field/filter detected, looking for previous reference image...")
@@ -871,7 +898,9 @@ if __name__ == "__main__":
                                                    images_to_stabilise)
                 # !applied means no telescope, break to tomorrow
                 if not applied:
-                    break
+                    logMessageToDb(args.instrument,
+                                   'SHIFT NOT APPLIED, TELESCOPE *NOT* CONNECTED, EXITING')
+                    sys.exit()
             log_list = [night,
                         os.path.split(ref_file)[1],
                         check_file,

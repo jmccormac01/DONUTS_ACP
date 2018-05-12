@@ -60,4 +60,6 @@ DB_DATABASE = "spec_ops"
 DB_PASS = 'spec_ops'
 
 # observatory location for sun calculations
-OBSERVATORY='paranal'
+OLAT = -24.-(37./60.)-(38./3600.)
+OLON = -70.-(24./60.)-(15./3600.)
+ELEV = 2418.

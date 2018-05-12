@@ -23,7 +23,7 @@ $> python acp_ag.py io [--debug]
 
 # Schematic
 
-![Schematic](DONUTS_AG.png)
+![Schematic](notes/DONUTS_AG_v3.png)
 
 # Contributors
 
