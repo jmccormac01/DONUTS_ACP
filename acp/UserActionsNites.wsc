@@ -419,7 +419,6 @@ function TargetStart(Plan, Target, NextTarget){
             } else {
                 Console.PrintLine("**ERR: Cannot parse shutter positions**");
                 return false;
-                }
             }
         }
     }
