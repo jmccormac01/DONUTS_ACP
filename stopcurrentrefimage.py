@@ -21,6 +21,20 @@ import pymysql
 
 def argParse():
     """
+    Parse the command line arguments
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    args : argparse object
+        Contains the command line arguments
+
+    Raises
+    ------
+    None
     """
     p = ap.ArgumentParser()
     p.add_argument('field',
@@ -35,11 +49,41 @@ def argParse():
 
 def tnow():
     """
+    Return an iso formatted string for the current UTC time
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    utcnow : string
+        The current UTC time string in iso format
+
+    Raises
+    ------
+    None
     """
     return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 def moveImage(image, dest):
     """
+    Move a file image to dest
+
+    Parameters
+    ----------
+    image : string
+        Name of the file to move
+    dest : string
+        Path to move the file to
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
     """
     if not os.path.exists(dest):
         os.mkdir(dest)
@@ -47,6 +91,29 @@ def moveImage(image, dest):
 
 def disableRefImage(ref_id, field, telescope, ref_image, filt):
     """
+    Set the valid until time for a given reference image as utcnow.
+    Doing so invalidates it for use.
+
+    Parameters
+    ----------
+    ref_id : int
+        Unique integer asigned to each reference image on creation, primary key
+    field : string
+        Name of the field that the reference image is from
+    telescope : string
+        Name of the telescope used to take the reference image
+    ref_image : string
+        Name of the reference image to disable
+    filt : string
+        Name of the filter used to the take the reference image
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
     """
     qry_args = (tnow(), ref_id, field, telescope, ref_image, filt, )
     qry = """
@@ -64,6 +131,29 @@ def disableRefImage(ref_id, field, telescope, ref_image, filt):
 
 def checkForPreviousRefImage(field, telescope, filt):
     """
+    Look in the database to see if we have a reference image for
+    this particular field, telescope and filter combination
+
+    If a previous image is found, the user is prompted to disable
+    this file in preparation for submitting the new reference image
+    in the next step.
+
+    Parameters
+    ----------
+    field : string
+        Name of the field that the reference image is from
+    telescope : string
+        Name of the telescope used to take the reference image
+    filt : string
+        Name of the filter used to the take the reference image
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    None
     """
     qry_args = (field, telescope, filt, tnow(), )
     qry = """

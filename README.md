@@ -96,7 +96,7 @@ The DONUTS package consists of several components:
 **Admin:**
    1. A script to calibrate the autoguiding pulseGuide command, ```calibrate_pulse_guide.py```
    1. A script to update a field's autoguider reference image with a new one, ```setnewrefimage.py```. This is used when the old image is no longer suitable and you have a new image on disc that you would like to use.
-   1. A script to stop field's current autoguider reference image, ```stopcurrentrefimage.py```. This is used to remove a referene frame and let DONUTS make a new one automatically next time it observes that field.
+   1. A script to stop field's current autoguider reference image, ```stopcurrentrefimage.py```. This is used to remove a reference frame and let DONUTS make a new one automatically next time it observes that field.
 
 # Usage for each component
 
