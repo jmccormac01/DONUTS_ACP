@@ -60,4 +60,6 @@ DB_DATABASE = "nites_ops"
 DB_PASS = "nites"
 
 # observatory location for sun calculations
-OBSERVATORY='lapalma'
+OLAT = 28.+(40./60.)+(00./3600.)
+OLON = -17.-(52./60.)-(00./3600.)
+ELEV = 2326.
