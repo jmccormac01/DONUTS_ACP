@@ -63,3 +63,6 @@ DB_PASS = 'spec_ops'
 OLAT = -24.-(37./60.)-(38./3600.)
 OLON = -70.-(24./60.)-(15./3600.)
 ELEV = 2418.
+
+# set the limit where donuts will shut off automatically
+SUNALT_LIMIT = 0

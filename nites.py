@@ -63,3 +63,6 @@ DB_PASS = "nites"
 OLAT = 28.+(40./60.)+(00./3600.)
 OLON = -17.-(52./60.)-(00./3600.)
 ELEV = 2326.
+
+# set the limit where donuts will shut off automatically
+SUNALT_LIMIT = 0

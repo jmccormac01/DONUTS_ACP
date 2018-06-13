@@ -495,7 +495,7 @@ def waitForImage(current_field, n_images, current_filter,
             return ag_new_day, None, None, None
         # secondary check, check the sun altitude, quit if > 0
         sunalt = getSunAlt(observatory)
-        if sunalt > 0:
+        if sunalt > SUNALT_LIMIT:
             return ag_new_day, None, None, None
         # check for new images
         t = g.glob('*{}'.format(IMAGE_EXTENSION))
