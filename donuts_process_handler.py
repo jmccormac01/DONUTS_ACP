@@ -213,7 +213,7 @@ class Autoguider(object):
                 return ag_status.unknown
         else:
             print('Already a guiding process running, cannot run 2, skipping!')
-            return ag_status.failed
+            return ag_status.already_running
 
     @Pyro4.expose
     def stop_ag(self):

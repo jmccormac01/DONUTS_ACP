@@ -65,4 +65,4 @@ OLON = -70.-(24./60.)-(15./3600.)
 ELEV = 2418.
 
 # set the limit where donuts will shut off automatically
-SUNALT_LIMIT = -20
+SUNALT_LIMIT = 0

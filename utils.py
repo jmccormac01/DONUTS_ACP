@@ -5,4 +5,4 @@ class ag_status:
     """
     Class to hold status flags
     """
-    success, failed, unknown, pyro_connection_error = range(4)
+    success, failed, unknown, pyro_connection_error, already_running = range(5)

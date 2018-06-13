@@ -172,6 +172,10 @@ function startDonuts(){
         Util.Console.PrintLine("donuts_process.py Pyro communications error (exit status=3)");
         Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
         return true;
+    } else if (exStat == 4){
+        Util.Console.PrintLine("donuts_process.py Donuts already running (exit status=4)");
+        Util.Console.PrintLine("Observations will continue using previous Donuts AG job");
+        return true;
     } else {
         Util.Console.PrintLine("donuts_process.py Unknown error (exit status=UNKNOWN)");
         Util.Console.PrintLine("Observations will continue with NO AUTOGUIDING");
