@@ -680,6 +680,14 @@ def setReferenceImage(field, filt, ref_image, telescope):
     #os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
     copyfile(ref_image, "{}/{}".format(AUTOGUIDER_REF_DIR, ref_image))
 
+def stopAg():
+    """
+    Call the donuts_process_handler to stop this guiding job
+    """
+    cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
+          "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py stop"
+    os.system(cmd)
+
 if __name__ == "__main__":
     # read the command line args
     args = argParse()
@@ -754,7 +762,7 @@ if __name__ == "__main__":
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
-                sys.exit()
+                stopAg()
         else:
             last_file = max(templist, key=os.path.getctime)
 
@@ -796,7 +804,7 @@ if __name__ == "__main__":
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
-                sys.exit()
+                stopAg()
             elif ag_status == ag_new_field or ag_status == ag_new_filter:
                 logMessageToDb(args.instrument,
                                "New field/filter detected, looking for previous reference image...")
@@ -900,7 +908,7 @@ if __name__ == "__main__":
                 if not applied:
                     logMessageToDb(args.instrument,
                                    'SHIFT NOT APPLIED, TELESCOPE *NOT* CONNECTED, EXITING')
-                    sys.exit()
+                    stopAg()
             log_list = [night,
                         os.path.split(ref_file)[1],
                         check_file,
