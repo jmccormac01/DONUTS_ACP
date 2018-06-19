@@ -26,7 +26,9 @@ def argParse():
     p = ap.ArgumentParser()
     p.add_argument('instrument',
                    help='name of the instrument to calibrate',
-                   choices=['nites', 'speculoos'])
+                   choices=['nites', 'io',
+                            'callisto', 'europa',
+                            'ganymede'])
     p.add_argument('--pulse_time',
                    help='time (ms) to pulse the mount during calibration',
                    default=5000)
@@ -130,8 +132,23 @@ def newFilename(data_dir, direction, pulse_time,
 
 if __name__ == "__main__":
     args = argParse()
-    if args.instrument == 'speculoos':
-        from speculoos import (
+    if args.instrument == 'io':
+        from speculoos_io import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'callisto':
+        from speculoos_callisto import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'europa':
+        from speculoos_europa import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'ganymede':
+        from speculoos_ganymede import (
             BASE_DIR,
             IMAGE_EXTENSION
             )
