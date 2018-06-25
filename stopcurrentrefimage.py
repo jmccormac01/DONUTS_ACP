@@ -217,4 +217,4 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
     checkForPreviousRefImage(args.field, args.telescope, args.filt)
-    print('Remember to restart Donuts after disabling reference images!')
+    print('Remember to restart Donuts guiding job after disabling reference images!')
