@@ -8,6 +8,22 @@ This package can run as a daemon where autoguiding is controlled using a custom 
 
 This package is freely available under the standard MIT open source license.
 
+# Package contents
+
+This package contains a series of scripts and software used for setting up, calibrating and running Donuts with ACP. Below is a brief description of the main components:
+
+   1. Operations:
+      1. In the ```acp/``` folder there is a modified version of the ACP ```UserActions.wsc``` file. This is used to trigger autoguiding from ACP plans
+      1. A daemon script ```donuts_process_handler.py```. This code runs all the time listening for commands from ACP to start and stop the guiding. The commands are triggered by the custom ```UserActions.wsc``` script above
+      1. A shim ```donuts_process.py```, which ```UserActions.wsc``` calls to insert jobs into the daemon using Pyro. The ```donuts_process.py``` script can also be used to manually start and stop guiding if required (e.g. in an emergency or if you wish to run Donues without a daemon)
+      1. The DONUTS main autoguiding code ```acp_ag.py```. This script does all the shift measuring and telescope movements
+      1. A per instrument configuration file, e.g.: ```nites.py```, ```speculoos_io.py``` etc. This file contains information such as field orientation and header keyword maps. A new file like this is required for each new instrument
+
+   1. Admin:
+      1. A script to calibrate the autoguiding pulseGuide command, ```calibrate_pulse_guide.py```
+      1. A script to update a field's autoguider reference image with a new one, ```setnewrefimage.py```. This is used when the old image is no longer suitable and you have a new image on disc that you would like to use.
+      1. A script to stop field's current autoguider reference image, ```stopcurrentrefimage.py```. This is used to remove a reference frame and let DONUTS make a new one automatically next time it observes that field.
+
 # Installation and setup
 
 Automating Donuts requires a non-trival amount of setup. Please contact me if you have difficulties or questions regarding the steps below
@@ -30,11 +46,12 @@ Follow the steps below to install the prerequisite software required to run Donu
       1. conda install astropy
       1. conda install scikit-image
       1. conda install pymysql
-      1. pip install donuts (only available through PyPi or source)
+      1. pip install Pyro4
+      1. pip install donuts
 
 ## Setting up MySQL database and autoguiding tables
 
-CHECK THE SCHEMAS!!
+**NEED TO GENERALISE THE TABLE SCHEMAS**
 
 A MySQL database is used to store information on the autoguiding reference images and the stats from the autoguiding in real time. Set up the database as follows:
 
@@ -166,10 +183,6 @@ Target2<tab>14:00:00<tab>+10:00:00
 
 A ```UsersActions``` script is required for each installation of this package. Please contact me and I can prepare one for your project
 
-## Setting up manual operation
-
-If not running in daemon mode, the installation and basic set up is now complete.
-
 ## A note on reference images
 
 Reference images are critical to the successful operation of Donuts. The goal of the reference image is to provide long-term super-stable tracking performance. If the anything on the telescope changes, such as the camera is removed and reinstalled, the previous reference images become invalid and need disabling.
@@ -178,6 +191,8 @@ The ```stopcurrentrefimage.py``` script can be used to disable the reference ima
 
 
 # Calibrating Donuts on sky
+
+## Calibrating camera scale and orientation
 
 The ```pulseGuiding``` command must be calibrate before Donuts can convert pixel offsets to on-sky movments.
 The ```calibrate_pulse_guide.py``` script automatically determines the scale and orientation of the camera. To calibrate pulseguide:
@@ -191,31 +206,17 @@ The ```calibrate_pulse_guide.py``` script automatically determines the scale and
 
 If a camera is removed, rotated or the telescope is modified in any way requiring a new pointing model, then the ```pulseGuide``` command should be recalibrated using the steps above
 
+## Calibrating autoguiding control loop
+
+Insert notes on PID loop calibration
+
 # Operation of Donuts
 
 Insert the notes from SPECULOOS here
 
-
 ## Schematic
 
 ![Schematic](notes/DONUTS_AG_v3.png)
-
-## Manual operation
-
-The DONUTS package consists of several components:
-
-**Operations:**
-   1. A modified version of the ACP ```UserActions.wsc``` file. This is used to trigger autoguiding from ACP plans
-   1. A daemon script ```donuts_process_handler.py```. This code runs all the time listening for commands from ACP to start and stop the guiding. The commands are triggered by the custom ```UserActions.wsc``` script above
-   1. A shim ```donuts_process.py```, which ```UserActions.wsc``` calls to insert jobs into the daemon using Pyro. The ```donuts_process.py``` script can also be used to manually start and stop guiding if required (in an emergency for example)
-   1. The DONUTS main autoguiding code ```acp_ag.py```. This script does all the shift measuring and telescope movements
-   1. A per instrument configuration file, e.g.: ```nites.py```, ```speculoos_io.py``` etc. This file contains information such as field orientation and header keyword maps.
-
-**Admin:**
-   1. A script to calibrate the autoguiding pulseGuide command, ```calibrate_pulse_guide.py```
-   1. A script to update a field's autoguider reference image with a new one, ```setnewrefimage.py```. This is used when the old image is no longer suitable and you have a new image on disc that you would like to use.
-   1. A script to stop field's current autoguider reference image, ```stopcurrentrefimage.py```. This is used to remove a reference frame and let DONUTS make a new one automatically next time it observes that field.
-
 
 
 # Contributors
