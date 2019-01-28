@@ -845,6 +845,7 @@ if __name__ == "__main__":
             # test load the comparison image to get the shift
             try:
                 h2 = fits.open(check_file)
+                del h2
             except IOError:
                 logMessageToDb(args.instrument, "Problem opening CHECK: {}...".format(check_file))
                 logMessageToDb(args.instrument, "Breaking back to look for new file...")
