@@ -6,11 +6,11 @@ The algorithm is currently in use at the NGTS, SPECULOOS, NITES and W1m telescop
 
 This package can run as a daemon where autoguiding is controlled using a custom ```TAG``` from an ACP plan, or Donuts can be started/stopped manually from the command line. The former requires some additional setup using the optional steps below
 
-This package is freely available user the standard MIT open source license.
+This package is freely available under the standard MIT open source license.
 
 # Installation and setup
 
-Automating Donuts requires a non-trival amount of setup. Below are the steps required to run the system in its current state. It is possible to run without the MySQL database if long term stability in field acquisition is not required. This would require slight modification of the source. Contact me if this is something that you would like.
+Automating Donuts requires a non-trival amount of setup. Please contact me if you have difficulties or questions regarding the steps below
 
 ## Installing prerequisite software
 
@@ -187,7 +187,7 @@ Reference images are critical to the successful operation of Donuts. The goal of
 The ```stopcurrentrefimage.py``` script can be used to disable the reference image of a given field. Donuts will then spot there is no valid reference image and aquire a new one during the next night.
 
 
-### Schematic
+## Schematic
 
 ![Schematic](notes/DONUTS_AG_v3.png)
 
