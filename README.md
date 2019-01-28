@@ -16,7 +16,7 @@ Automating Donuts requires a non-trival amount of setup. Please contact me if yo
 
 Follow the steps below to install the prerequisite software required to run Donuts on Windows. The installers supplied in the ```install/``` folder have been tested on Windows 7 and 10.
 
-   1. Install Github Desktop
+   1. Install Github Desktop - *GitHubDesktopSetup.exe*
       1. In GitHub desktop clone the DONUTS\_ACP repository -  *https://github.com/jmccormac01/DONUTS_ACP.git*
    1. Install Visual Studio C++ 2013 redistributable package - *vcredist_x86.exe*
    1. Install mysql - *mysql-installer-web-community-5.7.21.0.msi*
