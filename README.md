@@ -41,7 +41,7 @@ A MySQL database is used to store information on the autoguiding reference image
    1. Open a MySQL terminal
    1. Enter SQL mode using ```\sql```
    1. Connect to the local database using ```\c localhost```
-   1. Enter the password used during the insatllation
+   1. Enter the username/password used during the installation
    1. Create a new database to hold the autoguiding tables, e.g. ```telescopename_ops```
    1. Create two tables using the schemas below. The multiline ```CREATE TABLE``` commands can be pasted into the terminal.
    1. Add the database name, database host, username and password to the instrument configuration file (see below).
@@ -73,7 +73,7 @@ CREATE TABLE autoguider_log (
 
 ## Instrument configuration
 
-Create a new instrument configuration file in the ```DONUTS\_ACP``` folder. Use the NITES or SPECULOOS files as a template and add your specific values. Below is an example of the NITES configuration.
+Create a new instrument configuration file in the ```DONUTS_ACP``` folder. Use the NITES or SPECULOOS files as a template and add your specific values. Below is an example of the NITES configuration.
 
 ```python
 """
@@ -155,7 +155,7 @@ Running Donuts as a daemon requires connecting the Python code to ACP. This is d
 The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
 ACP automatically ends any active autoguiding processes at the end of an observing block.
-Below is an example extract from an ACP where Donuts is on for the first object and off for the second
+Below is an example extract from an ACP plan where Donuts is enabled for the first object and off for the second
 
 ```sh
 # TAG Donuts=on
@@ -170,21 +170,30 @@ A ```UsersActions``` script is required for each installation of this package. P
 
 If not running in daemon mode, the installation and basic set up is now complete.
 
-
-# Calibrating Donuts on sky
-
-Explain the calibration process
-
-
-# Operation of Donuts
-
-Insert the notes from SPECULOOS here
-
 ## A note on reference images
 
 Reference images are critical to the successful operation of Donuts. The goal of the reference image is to provide long-term super-stable tracking performance. If the anything on the telescope changes, such as the camera is removed and reinstalled, the previous reference images become invalid and need disabling.
 
 The ```stopcurrentrefimage.py``` script can be used to disable the reference image of a given field. Donuts will then spot there is no valid reference image and aquire a new one during the next night.
+
+
+# Calibrating Donuts on sky
+
+The ```pulseGuiding``` command must be calibrate before Donuts can convert pixel offsets to on-sky movments.
+The ```calibrate_pulse_guide.py``` script automatically determines the scale and orientation of the camera. To calibrate pulseguide:
+
+   1. Manually point the telescope to LST+1h in RA and 0deg in Dec and make the telescope track this position.
+   1. In an Anaconda terminal go to the ```DONUTS_ACP folder``` and run the command:
+      1. *python calibrate_pulse_guide.py TELESCOPE_NAME --analyse*
+      1. This will take a series of images nudging the telescope up/down/left/right and measuring the offsets.
+      1. The pattern is repeated 10 times and the results are returned at the end.
+   1. Add the scales and directions from ```calibrate_pulse_guide.py``` to the instrument configuration file under the parameters ```PIX2TIME``` and ```DIRECTIONS```.
+
+If a camera is removed, rotated or the telescope is modified in any way requiring a new pointing model, then the ```pulseGuide``` command should be recalibrated using the steps above
+
+# Operation of Donuts
+
+Insert the notes from SPECULOOS here
 
 
 ## Schematic
