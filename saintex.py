@@ -1,8 +1,8 @@
-j"""
+"""
 Confiuguration parameters for SAINT-EX
 """
 # e.g. .fits or .fit etc
-IMAGE_EXTENSION = "*.fts"
+IMAGE_EXTENSION = ".fts"
 
 # header keyword for the current filter
 FILTER_KEYWORD = 'FILTER'
@@ -11,10 +11,10 @@ FILTER_KEYWORD = 'FILTER'
 FIELD_KEYWORD = 'OBJECT'
 
 # RA axis alignment along x or y?
-RA_AXIS = 'y'
+RA_AXIS = 'x'
 
 # imager position angle
-CAMERA_ANGLE = 0.0
+CAMERA_ANGLE = 1.2
 
 # guider log file name
 LOGFILE = "guider.log"
@@ -26,16 +26,16 @@ GUIDE_BUFFER_LENGTH = 20
 IMAGES_TO_STABILISE = 10
 
 # outlier rejection sigma
-SIGMA_BUFFER = 5
+SIGMA_BUFFER = 10
 
 # pulseGuide conversions
-PIX2TIME = {'+x': 100.00,
-            '-x': 100.00,
-            '+y': 100.00,
-            '-y': 100.00}
+PIX2TIME = {'+x': 69.56,
+            '-x': 69.54,
+            '+y': 69.45,
+            '-y': 69.54}
 
 # guide directions
-DIRECTIONS = {'+y': 0, '-y': 1, '+x': 2, '-x': 3}
+DIRECTIONS = {'-y': 0, '+y': 1, '+x': 2, '-x': 3}
 
 # max allowed shift to correct
 MAX_ERROR_PIXELS = 20
@@ -44,25 +44,25 @@ MAX_ERROR_PIXELS = 20
 MAX_ERROR_STABIL_PIXELS = 40
 
 # ACP data base directory
-BASE_DIR = "C:\\data"
-AUTOGUIDER_REF_DIR = "C:\\data\\autoguider_ref"
+BASE_DIR = "C:\\Users\\Space\\My Documents\\ACP Astronomy\\Images"
+AUTOGUIDER_REF_DIR = "C:\\Users\\Space\\My Documents\\ACP Astronomy\\Images\\autoguider_ref"
 
 # PID loop coefficients
-PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
-              'y': {'p': 1.0, 'i': 0.5, 'd': 0.0},
+PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
+              'y': {'p': 0.50, 'i': 0.02, 'd': 0.0},
               'set_x': 0.0,
               'set_y': 0.0}
 
 # database set up
 DB_HOST = "localhost"
-DB_USER = "saintex"
+DB_USER = "space"
 DB_DATABASE = "saintex_ops"
-DB_PASS = "saintex_ops"
+DB_PASS = 'saintex_ops'
 
 # observatory location for sun calculations
-OLAT = 28.+(40./60.)+(00./3600.)
-OLON = -17.-(52./60.)-(00./3600.)
-ELEV = 2326.
+OLAT = -24.-(37./60.)-(38./3600.)
+OLON = -70.-(24./60.)-(15./3600.)
+ELEV = 2418.
 
 # set the limit where donuts will shut off automatically
 SUNALT_LIMIT = 0
