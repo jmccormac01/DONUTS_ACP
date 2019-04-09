@@ -168,9 +168,9 @@ ELEV = 2326.
 SUNALT_LIMIT = 0
 ```
 
-## Setting up daemon mode
+# Setting up daemon mode
 
-# Registering custom user actions script with ACP
+## Registering custom user actions script with ACP
 
 Running Donuts as a daemon requires connecting the Python code to ACP. This is done using a custom ```UserActions``` script.
 The ```UserActions<INSTRUMENT_NAME>.wsc``` script allows ACP to call our custom python code. On 64bit operating systems it
@@ -181,12 +181,12 @@ needs registering as follows:
    1. ...> regsvr32 UserActions<INSTRUMENT_NAME>.wsc
 
 
-# Running daemon mode
+## Running daemon mode
 
 The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
-ACP automatically ends any active autoguiding processes at the end of an observing block.
-Below is an example extract from an ACP plan where Donuts is enabled for the first object and off for the second
+The new ```UserActions``` script also allows ACP to automatically stop autoguiding processes at the end of an observing block.
+Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second:
 
 ```sh
 # TAG Donuts=on
@@ -197,7 +197,7 @@ Target2<tab>14:00:00<tab>+10:00:00
 
 A ```UsersActions``` script is required for each installation of this package. Please contact me and I can prepare one for your project
 
-## A note on reference images
+# A note on reference images
 
 Reference images are critical to the successful operation of Donuts. The goal of the reference image is to provide long-term super-stable tracking performance. If the anything on the telescope changes, such as the camera is removed and reinstalled, the previous reference images become invalid and need disabling.
 
