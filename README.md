@@ -226,9 +226,7 @@ Tuning PID loops is an art in itself. Documenting that here is beyond the scope 
 
 # Operation of Donuts
 
-Donuts can be operated using the daemon mode described above or triggered manually from the command line by the observer. Below I describe the notes on initalising and triggering the daemon.
-
-**Finish notes on initialising and triggering AG**
+Donuts can be operated using the daemon mode described above or triggered manually from the command line by the observer. Operational instructions can be written on a case by case basis.
 
 ## Schematic
 
