@@ -176,7 +176,7 @@ Running Donuts as a daemon requires connecting the Python code to ACP. This is d
 The ```UserActions<INSTRUMENT_NAME>.wsc``` script allows ACP to call our custom python code. On 64bit operating systems it
 needs registering as follows:
 
-   1. Run C:\Windows\SysWOW64\cmd.exe   *Note:SysWOW64!*
+   1. Run C:\Windows\SysWOW64\cmd.exe   **(Note:SysWOW64!)**
    1. cd "\Program Files\ACP Obs Control"
    1. ...> regsvr32 UserActions<INSTRUMENT_NAME>.wsc
 
@@ -186,7 +186,7 @@ needs registering as follows:
 The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
 The new ```UserActions``` script also allows ACP to automatically stop autoguiding processes at the end of an observing block.
-Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second:
+Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second. By ommitting the called to enable Donuts ACP continues as normal.
 
 ```sh
 # TAG Donuts=on
@@ -199,7 +199,7 @@ A ```UsersActions``` script is required for each installation of this package. P
 
 # A note on reference images
 
-Reference images are critical to the successful operation of Donuts. The goal of the reference image is to provide long-term super-stable tracking performance. If the anything on the telescope changes, such as the camera is removed and reinstalled, the previous reference images become invalid and need disabling.
+Reference images are critical to the successful operation of Donuts. The goal of the reference image is to provide long-term stable tracking performance. If the anything on the telescope changes, such as the camera is removed and reinstalled, the previous reference images become invalid and need disabling.
 
 The ```stopcurrentrefimage.py``` script can be used to disable the reference image of a given field. Donuts will then spot there is no valid reference image and aquire a new one during the next night.
 
@@ -208,25 +208,27 @@ The ```stopcurrentrefimage.py``` script can be used to disable the reference ima
 
 ## Calibrating camera scale and orientation
 
-The ```pulseGuiding``` command must be calibrate before Donuts can convert pixel offsets to on-sky movments.
+The ```pulseGuiding``` command must be calibrated before Donuts can convert pixel offsets to on-sky movments.
 The ```calibrate_pulse_guide.py``` script automatically determines the scale and orientation of the camera. To calibrate pulseguide:
 
    1. Manually point the telescope to LST+1h in RA and 0deg in Dec and make the telescope track this position.
-   1. In an Anaconda terminal go to the ```DONUTS_ACP folder``` and run the command:
+   1. In an Anaconda terminal go to the ```DONUTS_ACP``` folder and run the command:
       1. *python calibrate_pulse_guide.py TELESCOPE_NAME --analyse*
-      1. This will take a series of images nudging the telescope up/down/left/right and measuring the offsets.
+      1. This will take a series of images while nudging the telescope up/down/left/right in between and measuring the offsets.
       1. The pattern is repeated 10 times and the results are returned at the end.
-   1. Add the scales and directions from ```calibrate_pulse_guide.py``` to the instrument configuration file under the parameters ```PIX2TIME``` and ```DIRECTIONS```.
+   1. The resulting scales and directions from ```calibrate_pulse_guide.py``` should be added the instrument configuration file under the parameters ```PIX2TIME``` and ```DIRECTIONS```. Example values can be seen in the config file above.
 
-If a camera is removed, rotated or the telescope is modified in any way requiring a new pointing model, then the ```pulseGuide``` command should be recalibrated using the steps above
+If a camera is removed, rotated or the telescope is modified in any way requiring a new pointing model, then the ```pulseGuide``` command should be recalibrated using the steps above.
 
 ## Calibrating autoguiding control loop
 
-Insert notes on PID loop calibration
+Tuning PID loops is an art in itself. Documenting that here is beyond the scope of this readme. I am happy to tune telescopes on a case by case basis.
 
 # Operation of Donuts
 
-Insert the notes from SPECULOOS here
+Donuts can be operated using the daemon mode described above or triggered manually from the command line by the observer. Below I describe the notes on initalising and triggering the daemon.
+
+**Finish notes on initialising and triggering AG**
 
 ## Schematic
 
