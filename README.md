@@ -170,7 +170,19 @@ SUNALT_LIMIT = 0
 
 ## Setting up daemon mode
 
+# Registering custom user actions script with ACP
+
 Running Donuts as a daemon requires connecting the Python code to ACP. This is done using a custom ```UserActions``` script.
+The ```UserActions<INSTRUMENT_NAME>.wsc``` script allows ACP to call our custom python code. On 64bit operating systems it
+needs registering as follows:
+
+   1. Run C:\Windows\SysWOW64\cmd.exe   *Note:SysWOW64!*
+   1. cd "\Program Files\ACP Obs Control"
+   1. ...> regsvr32 UserActions<INSTRUMENT_NAME>.wsc
+
+
+# Running daemon mode
+
 The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
 ACP automatically ends any active autoguiding processes at the end of an observing block.
