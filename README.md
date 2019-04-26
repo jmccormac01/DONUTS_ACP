@@ -67,7 +67,8 @@ A MySQL database is used to store information on the autoguiding reference image
 
 ```sql
 CREATE TABLE autoguider_ref (
-  field varchar(100) not null primary key,
+  ref_id mediumint auto_increment primary key,
+  field varchar(100) not null,
   telescope varchar(20) not null,
   ref_image varchar(100) not null,
   filter varchar(20) not null,
@@ -75,18 +76,29 @@ CREATE TABLE autoguider_ref (
   valid_until datetime
 );
 
-CREATE TABLE autoguider_log (
+CREATE TABLE autoguider_log_new (
    updated timestamp default current_timestamp on update current_timestamp,
-   reference varchar(100) not null,
-   comparison varchar(100) not null,
-   solution_x double not null,
-   solution_y double not null,
-   culled_max_shift_x varchar(5) not null,
-   culled_max_shift_y varchar(5) not null,
-   pid_x double not null,
-   pid_y double not null,
+   night date not null,
+   reference varchar(150) not null,
+   comparison varchar(150) not null,
+   stabilised varchar(5) not null,
+   shift_x double not null,
+   shift_y double not null,
+   pre_pid_x double not null,
+   pre_pid_y double not null,
+   post_pid_x double not null,
+   post_pid_y double not null,
    std_buff_x double not null,
-   std_buff_y double not null
+   std_buff_y double not null,
+   culled_max_shift_x varchar(5) not null,
+   culled_max_shift_y varchar(5) not null
+);
+
+CREATE TABLE autoguider_info_log (
+   message_id mediumint not null auto_increment primary key,
+   updated timestamp default current_timestamp on update current_timestamp,
+   telescope varchar(20) not null,
+   message varchar(500) not null
 );
 ```
 

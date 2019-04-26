@@ -22,6 +22,8 @@ import pymysql
 from utils import ag_status
 
 # pylint: disable=invalid-name
+# pylint: disable=wildcard-import
+# pylint: disable=unused-wildcard-import
 
 AG_ON_TIME = 10
 AG_OFF_TIME = 30
@@ -47,7 +49,7 @@ def argParse():
     p.add_argument('instrument',
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
-                            'ganymede', 'nites'])
+                            'ganymede', 'saintex', 'nites'])
     return p.parse_args()
 
 class Autoguider(object):
@@ -73,7 +75,7 @@ class Autoguider(object):
     ------
     None
     """
-    def __init__(self, instrument, pyro_uri, daemon):
+    def __init__(self, instrument, db_info, donuts_info, pyro_uri, daemon):
         """
         Initialise the class
 
@@ -82,6 +84,12 @@ class Autoguider(object):
         self.guiding = False
         self.proc = None
         self.instrument = instrument
+        self.db_host = db_info['host']
+        self.db_user = db_info['user']
+        self.db_database = db_info['database']
+        self.db_password = db_info['password']
+        self.python_path = donuts_info['python_path']
+        self.donuts_path = db_info['donuts_path']
         self.pyro_uri = pyro_uri
         self.daemon = daemon
         self.print_thread = threading.Thread(target=self.printStatus)
@@ -142,10 +150,10 @@ class Autoguider(object):
             ORDER BY updated DESC
             LIMIT 1
             """
-        with pymysql.connect(host='localhost',
-                             db='spec_ops',
-                             user='speculoos',
-                             password='spec_ops',
+        with pymysql.connect(host=self.db_host,
+                             db=self.db_database,
+                             user=self.db_user,
+                             password=self.db_password,
                              cursorclass=pymysql.cursors.DictCursor) as cur:
             cur.execute(qry)
             result = cur.fetchone()
@@ -167,10 +175,10 @@ class Autoguider(object):
             ORDER BY message_id DESC
             LIMIT 10
             """
-        with pymysql.connect(host='localhost',
-                             db='spec_ops',
-                             user='speculoos',
-                             password='spec_ops',
+        with pymysql.connect(host=self.db_host,
+                             db=self.db_database,
+                             user=self.db_user,
+                             password=self.db_password,
                              cursorclass=pymysql.cursors.DictCursor) as cur:
             cur.execute(qry2)
             results = cur.fetchall()
@@ -197,8 +205,7 @@ class Autoguider(object):
         None
         """
         if self.proc is None:
-            cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
-                  "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\acp_ag.py {}".format(self.instrument)
+            cmd = "{} {}\\acp_ag.py {}".format(self.python_path, self.donuts_path, self.instrument)
             self.proc = sp.Popen(cmd, stdout=sp.PIPE, shell=False, creationflags=sp.CREATE_NEW_PROCESS_GROUP)
             # poll = None means running
             if self.proc.poll() is None:
@@ -278,9 +285,32 @@ class Autoguider(object):
 
 if __name__ == "__main__":
     args = argParse()
+    if args.instrument == 'nites':
+        from nites import *
+    elif args.instrument == 'io':
+        from speculoos_io import *
+    elif args.instrument == 'callisto':
+        from speculoos_callisto import *
+    elif args.instrument == 'europa':
+        from speculoos_europa import *
+    elif args.instrument == 'ganymede':
+        from speculoos_ganymede import *
+    elif args.instrument == 'saintex':
+        from saintex import *
+    else:
+        sys.exit(1)
+
+    # need to generate database connection info and the location
+    # of python and the autoguiding code - build from imports
+    db_info = {'host': DB_HOST, 'user': DB_USER,
+               'DB':DB_DATABASE, 'password': DB_PASS}
+    donuts_info = {'python_path': PYTHONPATH,
+                   'donuts_path': DONUTSPATH}
+
     sys.excepthook = Pyro4.util.excepthook
     daemon = Pyro4.Daemon(host='localhost', port=9234)
-    ag = Autoguider(args.instrument, 'PYRO:donuts@localhost:9234', daemon)
+    ag = Autoguider(args.instrument, db_info, donuts_info,
+                    'PYRO:donuts@localhost:9234', daemon)
     uri = daemon.register(ag, objectId='donuts')
     daemon.requestLoop()
     print('Exiting Donuts process handler')

@@ -5,7 +5,7 @@ Usage:
     $> python acp_ag.py INSTRUMENT
 
 where INSTRUMENT can be:
-    nites, io, europa, callisto, ganymede
+    nites, io, europa, callisto, ganymede, saintex
 """
 import time
 import os
@@ -41,6 +41,8 @@ from donuts import Donuts
 # pylint: disable = redefined-outer-name
 # pylint: disable = line-too-long
 # pylint: disable = no-member
+# pylint: disable = wildcard-import
+# pylint: disable = unused-wildcard-import
 
 # autoguider status flags
 ag_new_day, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
@@ -66,7 +68,7 @@ def argParse():
     p.add_argument('instrument',
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
-                            'ganymede', 'nites'])
+                            'ganymede', 'saintex', 'nites'])
     return p.parse_args()
 
 def getSunAlt(observatory):
@@ -680,12 +682,11 @@ def setReferenceImage(field, filt, ref_image, telescope):
     #os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
     copyfile(ref_image, "{}/{}".format(AUTOGUIDER_REF_DIR, ref_image))
 
-def stopAg():
+def stopAg(pypath, donutspath):
     """
     Call the donuts_process_handler to stop this guiding job
     """
-    cmd = "C:\\ProgramData\\Miniconda3\\python.exe " \
-          "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py stop"
+    cmd = "{} {}\\donuts_process.py stop".format(pypath, donutspath)
     os.system(cmd)
 
 if __name__ == "__main__":
@@ -701,6 +702,8 @@ if __name__ == "__main__":
         from speculoos_europa import *
     elif args.instrument == 'ganymede':
         from speculoos_ganymede import *
+    elif args.instrument == 'saintex':
+        from saintex import *
     else:
         sys.exit(1)
 
@@ -762,7 +765,7 @@ if __name__ == "__main__":
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
-                stopAg()
+                stopAg(PYTHONPATH, DONUTSPATH)
         else:
             last_file = max(templist, key=os.path.getctime)
 
@@ -804,7 +807,7 @@ if __name__ == "__main__":
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
-                stopAg()
+                stopAg(PYTHONPATH, DONUTSPATH)
             elif ag_status == ag_new_field or ag_status == ag_new_filter:
                 logMessageToDb(args.instrument,
                                "New field/filter detected, looking for previous reference image...")
@@ -909,7 +912,7 @@ if __name__ == "__main__":
                 if not applied:
                     logMessageToDb(args.instrument,
                                    'SHIFT NOT APPLIED, TELESCOPE *NOT* CONNECTED, EXITING')
-                    stopAg()
+                    stopAg(PYTHONPATH, DONUTSPATH)
             log_list = [night,
                         os.path.split(ref_file)[1],
                         check_file,

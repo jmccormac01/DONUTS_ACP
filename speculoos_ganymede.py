@@ -46,6 +46,8 @@ MAX_ERROR_STABIL_PIXELS = 40
 # ACP data base directory
 BASE_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images"
 AUTOGUIDER_REF_DIR = "C:\\Users\\speculoos\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
+PYTHONPATH = "C:\\ProgramData\\Miniconda3\\python.exe"
+DONUTSPATH = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
