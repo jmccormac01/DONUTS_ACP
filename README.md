@@ -15,7 +15,7 @@ This package contains a series of scripts and software used for setting up, cali
    1. Operations:
       1. In the ```acp/``` folder there is a modified version of the ACP ```UserActions.wsc``` file. This is used to trigger autoguiding from ACP plans
       1. A daemon script ```donuts_process_handler.py```. This code runs all the time listening for commands from ACP to start and stop the guiding. The commands are triggered by the custom ```UserActions.wsc``` script above
-      1. A shim ```donuts_process.py```, which ```UserActions.wsc``` calls to insert jobs into the daemon using Pyro. The ```donuts_process.py``` script can also be used to manually start and stop guiding if required (e.g. in an emergency or if you wish to run Donues without a daemon)
+      1. A shim ```donuts_process.py```, which ```UserActions.wsc``` calls to insert jobs into the daemon using Pyro. The ```donuts_process.py``` script can also be used to manually start and stop guiding if required (e.g. in an emergency or if you wish to run Donuts without a daemon)
       1. The DONUTS main autoguiding code ```acp_ag.py```. This script does all the shift measuring and telescope movements
       1. A per instrument configuration file, e.g.: ```nites.py```, ```speculoos_io.py``` etc. This file contains information such as field orientation and header keyword maps. A new file like this is required for each new instrument
 
@@ -36,11 +36,11 @@ Follow the steps below to install the prerequisite software required to run Donu
 
    1. Sign into GitHub desktop using your GitHub account.
    1. Clone the DONUTS\_ACP repository -  *https://github.com/jmccormac01/DONUTS_ACP.git*
-   1. Install Visual Studio C++ 2013 redistributable package - *vcredist_x86.exe*
    1. Install mysql - *mysql-installer-web-community-5.7.21.0.msi*
       1. Choose a custom install
-      1. Install the server, utils, shell + workbench only
-      1. It will ask for a username and password, remember these for later
+      1. Install the server and shell only
+      1. It will ask for a root username and password, remember these for later
+      1. Create a normal user as well as root, remember the login details for later
    1. Install miniconda3-latest - *Miniconda3-latest-Windows-x86_64.exe*
    1. Once miniconda is installed, open a prompt and run the commands below:
       1. conda install numpy
@@ -60,7 +60,7 @@ A MySQL database is used to store information on the autoguiding reference image
    1. Connect to the local database using ```\c localhost```
    1. Enter the username/password used during the installation
    1. Create a new database to hold the autoguiding tables, e.g. ```telescopename_ops```
-   1. Create two tables using the schemas below. The multiline ```CREATE TABLE``` commands can be pasted into the terminal.
+   1. Create three tables using the schemas below. The multiline ```CREATE TABLE``` commands can be pasted into the terminal.
    1. Add the database name, database host, username and password to the instrument configuration file (see below).
 
 ```sql
@@ -198,7 +198,8 @@ needs registering as follows:
 The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
 The new ```UserActions``` script also allows ACP to automatically stop autoguiding processes at the end of an observing block.
-Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second. By ommitting the called to enable Donuts ACP continues as normal.
+Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second.
+Ommitting the call to enable Donuts ACP has the same effect as using ```TAG Donuts=off``. **Note: the TAG command is case sensitive**.
 
 ```sh
 # TAG Donuts=on
