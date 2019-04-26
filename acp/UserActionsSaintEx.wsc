@@ -326,16 +326,16 @@ function ImageStart(Interval, Binning, Subframe, FilterNum, ForPointing){
 //       For AUTOSTACKING. SEE NOTE BELOW!)
 //------------------------------------------------------------------------------
 function ImageEnd(ImageFile){
-    //Util.Console.PrintLine(" Custom UserAction for ImageEnd called");
-    //var PL = new ActiveXObject("PinPoint.Plate");
-    //var FMxF = new ActiveXObject("FocusMax.Focuser");
-    //PL.AttachFITS(ImageFile);
-    //PL.WriteFITSDouble("FOCUSTEM", FMxF.Temperature, 1);
-    //PL.WriteFITSDouble("FOCUSPOS", FMxF.Position, 0);
-    //PL.UpdateFITS();
-    //PL.DetachFITS();
-    //FMxF = null;
-    //PL = null;
+    Util.Console.PrintLine(" Custom UserAction for ImageEnd called");
+    var PL = new ActiveXObject("PinPoint.Plate");
+    var FMxF = new ActiveXObject("FocusMax.Focuser");
+    PL.AttachFITS(ImageFile);
+    PL.WriteFITSDouble("FOCUSTEM", FMxF.Temperature, 1);
+    PL.WriteFITSDouble("FOCUSPOS", FMxF.Position, 0);
+    PL.UpdateFITS();
+    PL.DetachFITS();
+    FMxF = null;
+    PL = null;
     return true;
 }
 
