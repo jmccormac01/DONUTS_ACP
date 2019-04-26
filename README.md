@@ -199,7 +199,7 @@ The custom ```UserActions``` script sets up a new ```TAG``` command.
 When ACP sees the request for Donuts via the custom ```TAG``` it triggers the Donuts daemon to spawn an autoguiding process.
 The new ```UserActions``` script also allows ACP to automatically stop autoguiding processes at the end of an observing block.
 Below is an example extract from an ACP plan where Donuts is enabled for the first object and is disabled for the second.
-Ommitting the call to enable Donuts ACP has the same effect as using ```TAG Donuts=off``. **Note: the TAG command is case sensitive**.
+Ommitting the call to enable Donuts ACP has the same effect as using ```TAG Donuts=off```. **Note: the TAG command is case sensitive**.
 
 ```sh
 # TAG Donuts=on
