@@ -14,7 +14,7 @@ FIELD_KEYWORD = 'OBJECT'
 RA_AXIS = 'x'
 
 # imager position angle
-CAMERA_ANGLE = 1.2
+CAMERA_ANGLE = 0.0
 
 # guider log file name
 LOGFILE = "guider.log"
@@ -44,8 +44,8 @@ MAX_ERROR_PIXELS = 20
 MAX_ERROR_STABIL_PIXELS = 40
 
 # ACP data base directory
-BASE_DIR = "C:\\Users\\Space\\My Documents\\ACP Astronomy\\Images"
-AUTOGUIDER_REF_DIR = "C:\\Users\\Space\\My Documents\\ACP Astronomy\\Images\\autoguider_ref"
+BASE_DIR = "C:\\Users\\Space\\Documents\\ACP Astronomy\\Images"
+AUTOGUIDER_REF_DIR = "C:\\Users\\Space\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
@@ -55,14 +55,14 @@ PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
 
 # database set up
 DB_HOST = "localhost"
-DB_USER = "space"
-DB_DATABASE = "saintex_ops"
-DB_PASS = 'saintex_ops'
+DB_USER = "Space"
+DB_DATABASE = "saint_ops"
+DB_PASS = 'saint_ops'
 
 # observatory location for sun calculations
-OLAT = -24.-(37./60.)-(38./3600.)
-OLON = -70.-(24./60.)-(15./3600.)
-ELEV = 2418.
+OLAT = 31.0439
+OLON = -115.4637
+ELEV = 2800.
 
 # set the limit where donuts will shut off automatically
 SUNALT_LIMIT = 0
