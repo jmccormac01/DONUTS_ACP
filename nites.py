@@ -46,6 +46,8 @@ MAX_ERROR_STABIL_PIXELS = 40
 # ACP data base directory
 BASE_DIR = "C:\\data"
 AUTOGUIDER_REF_DIR = "C:\\data\\autoguider_ref"
+PYTHONPATH = "C:\\ProgramData\\Miniconda3\\python.exe"
+DONUTSPATH = "C:\\Users\\nites\\Documents\\GitHub\\DONUTS_ACP"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 1.0, 'i': 0.5, 'd': 0.0},
