@@ -456,7 +456,7 @@ def getDataDir(data_subdir):
         return None, night_str
 
 # wait for the newest image
-def waitForImage(current_field, n_images, current_filter,
+def waitForImage(data_subdir, current_field, n_images, current_filter,
                  current_data_dir, observatory):
     """
     Wait for new images. Several things can happen:
@@ -468,6 +468,8 @@ def waitForImage(current_field, n_images, current_filter,
 
     Parameters
     ----------
+    data_subdir : string
+        subdirectory of data folder for raw data
     current_field : string
         name of the current target
     n_images : int
@@ -496,7 +498,7 @@ def waitForImage(current_field, n_images, current_filter,
     """
     while 1:
         # check for new data directory, i.e. tomorrow
-        new_data_dir, _ = getDataDir()
+        new_data_dir, _ = getDataDir(data_subdir)
         if new_data_dir != current_data_dir:
             return ag_new_day, None, None, None
         # secondary check, check the sun altitude, quit if > 0
@@ -765,7 +767,8 @@ if __name__ == "__main__":
         # if no images appear before the end of the night
         # just die quietly
         if n_images == 0:
-            ag_status, last_file, _, _ = waitForImage("", n_images, "", data_loc, observatory)
+            ag_status, last_file, _, _ = waitForImage(DATA_SUBDIR, "", n_images,
+                                                      "", data_loc, observatory)
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
@@ -803,7 +806,8 @@ if __name__ == "__main__":
 
         # Now wait on new images
         while 1:
-            ag_status, check_file, current_field, current_filter = waitForImage(current_field,
+            ag_status, check_file, current_field, current_filter = waitForImage(DATA_SUBDIR,
+                                                                                current_field,
                                                                                 n_images,
                                                                                 current_filter,
                                                                                 data_loc,
