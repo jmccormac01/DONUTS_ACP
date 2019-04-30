@@ -45,6 +45,7 @@ MAX_ERROR_STABIL_PIXELS = 40
 
 # ACP data base directory
 BASE_DIR = "C:\\data"
+DATA_SUBDIR = ""
 AUTOGUIDER_REF_DIR = "C:\\data\\autoguider_ref"
 PYTHONPATH = "C:\\ProgramData\\Miniconda3\\python.exe"
 DONUTSPATH = "C:\\Users\\nites\\Documents\\GitHub\\DONUTS_ACP"

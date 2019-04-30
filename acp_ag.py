@@ -424,7 +424,7 @@ def getAmOrPm():
     return token
 
 # get tonights directory
-def getDataDir():
+def getDataDir(data_subdir):
     """
     Get tonight's data directory
 
@@ -446,6 +446,10 @@ def getDataDir():
     night = "{:d}{:02d}{:02d}".format(d.year, d.month, d.day)
     night_str = "{:d}-{:02d}-{:02d}".format(d.year, d.month, d.day)
     data_loc = "{}\\{}".format(BASE_DIR, night)
+    # adds capability for data to live in folders
+    # inside the nightly folder, as for saintex
+    if data_subdir != "":
+        data_loc = data_loc + "\\{}".format(data_subdir)
     if os.path.exists(data_loc):
         return data_loc, night_str
     else:
@@ -729,7 +733,7 @@ if __name__ == "__main__":
         sleep_time = 10
         # loop while waiting on data directory & scope to be connected
         while not data_loc:
-            data_loc, night = getDataDir()
+            data_loc, night = getDataDir(DATA_SUBDIR)
             if data_loc:
                 logMessageToDb(args.instrument,
                                "Found data directory: {}".format(data_loc))
