@@ -28,7 +28,7 @@ def argParse():
                    help='name of the instrument to calibrate',
                    choices=['nites', 'io',
                             'callisto', 'europa',
-                            'ganymede'])
+                            'ganymede', 'saintex'])
     p.add_argument('--pulse_time',
                    help='time (ms) to pulse the mount during calibration',
                    default=5000)
@@ -152,11 +152,18 @@ if __name__ == "__main__":
             BASE_DIR,
             IMAGE_EXTENSION
             )
-    else:
+    elif args.instrument == 'saintex':
+        from saintex import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'nites':
         from nites import (
             BASE_DIR,
             IMAGE_EXTENSION
             )
+    else:
+        sys.exit(1)
     # set up objects to hold calib info
     DIRECTION_STORE = defaultdict(list)
     SCALE_STORE = defaultdict(list)
