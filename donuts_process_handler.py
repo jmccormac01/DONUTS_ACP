@@ -89,7 +89,7 @@ class Autoguider(object):
         self.db_database = db_info['database']
         self.db_password = db_info['password']
         self.python_path = donuts_info['python_path']
-        self.donuts_path = db_info['donuts_path']
+        self.donuts_path = donuts_info['donuts_path']
         self.pyro_uri = pyro_uri
         self.daemon = daemon
         self.print_thread = threading.Thread(target=self.printStatus)
