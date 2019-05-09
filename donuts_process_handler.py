@@ -303,7 +303,7 @@ if __name__ == "__main__":
     # need to generate database connection info and the location
     # of python and the autoguiding code - build from imports
     db_info = {'host': DB_HOST, 'user': DB_USER,
-               'DB':DB_DATABASE, 'password': DB_PASS}
+               'database':DB_DATABASE, 'password': DB_PASS}
     donuts_info = {'python_path': PYTHONPATH,
                    'donuts_path': DONUTSPATH}
 
