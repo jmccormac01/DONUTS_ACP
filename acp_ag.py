@@ -402,6 +402,14 @@ def getAmOrPm():
     """
     Determine if it is morning or afteroon
 
+    This function uses now instead of utcnow because
+    it is the local time which determines if we are
+    starting or ending the curent night.
+
+    A local time > midday is the evening
+    A local time < midday is the morning of the day after
+    This is not true for UTC in all places
+
     Parameters
     ----------
     None
@@ -416,7 +424,7 @@ def getAmOrPm():
     ------
     None
     """
-    now = datetime.utcnow()
+    now = datetime.now()
     if now.hour >= 12:
         token = 0
     else:
