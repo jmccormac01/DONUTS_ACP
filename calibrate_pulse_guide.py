@@ -28,7 +28,8 @@ def argParse():
                    help='name of the instrument to calibrate',
                    choices=['nites', 'io',
                             'callisto', 'europa',
-                            'ganymede', 'saintex'])
+                            'ganymede', 'saintex',
+                            'artemis'])
     p.add_argument('--pulse_time',
                    help='time (ms) to pulse the mount during calibration',
                    default=5000)
@@ -151,6 +152,11 @@ if __name__ == "__main__":
             )
     elif args.instrument == 'saintex':
         from saintex import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'artemis':
+        from artemis import (
             BASE_DIR,
             IMAGE_EXTENSION
             )

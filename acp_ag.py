@@ -5,7 +5,7 @@ Usage:
     $> python acp_ag.py INSTRUMENT
 
 where INSTRUMENT can be:
-    nites, io, europa, callisto, ganymede, saintex
+    nites, io, europa, callisto, ganymede, saintex, artemis
 """
 import time
 import os
@@ -68,7 +68,8 @@ def argParse():
     p.add_argument('instrument',
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
-                            'ganymede', 'saintex', 'nites'])
+                            'ganymede', 'saintex', 'nites',
+                            'artemis'])
     return p.parse_args()
 
 def getSunAlt(observatory):
@@ -718,6 +719,8 @@ if __name__ == "__main__":
         from speculoos_ganymede import *
     elif args.instrument == 'saintex':
         from saintex import *
+    elif args.instrument == 'artemis':
+        from artemis import *
     else:
         sys.exit(1)
 

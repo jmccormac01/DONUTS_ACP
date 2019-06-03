@@ -49,7 +49,8 @@ def argParse():
     p.add_argument('instrument',
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
-                            'ganymede', 'saintex', 'nites'])
+                            'ganymede', 'saintex',
+                            'artemis', 'nites'])
     return p.parse_args()
 
 class Autoguider(object):
@@ -297,6 +298,8 @@ if __name__ == "__main__":
         from speculoos_ganymede import *
     elif args.instrument == 'saintex':
         from saintex import *
+    elif args.instrument == 'artemis':
+        from artemis import *
     else:
         sys.exit(1)
 
