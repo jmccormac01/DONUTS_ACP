@@ -190,12 +190,11 @@ if __name__ == "__main__":
             check, image_id = newFilename(data_dir, j, args.pulse_time,
                                           image_id, IMAGE_EXTENSION)
             takeImageWithMaxIm(myCamera, check)
-            if args.analyse:
-                shift = donuts_ref.measure_shift(check)
-                direction, magnitude = determineShiftDirectionMagnitude(shift)
-                DIRECTION_STORE[j].append(direction)
-                SCALE_STORE[j].append(magnitude)
-                donuts_ref = Donuts(check)
+            shift = donuts_ref.measure_shift(check)
+            direction, magnitude = determineShiftDirectionMagnitude(shift)
+            DIRECTION_STORE[j].append(direction)
+            SCALE_STORE[j].append(magnitude)
+            donuts_ref = Donuts(check)
     # now do some analysis on the run from above
     # check that the directions are the same every time for each orientation
     for direc in DIRECTION_STORE:
