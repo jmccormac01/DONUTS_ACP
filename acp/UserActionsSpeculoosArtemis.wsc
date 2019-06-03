@@ -144,6 +144,7 @@ function startDonuts(){
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Starting donuts...");
+    Console.PrintLine("Testing new registry...");
     var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
