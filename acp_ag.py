@@ -720,7 +720,7 @@ if __name__ == "__main__":
     elif args.instrument == 'saintex':
         from saintex import *
     elif args.instrument == 'artemis':
-        from artemis import *
+        from speculoos_artemis import *
     else:
         sys.exit(1)
 

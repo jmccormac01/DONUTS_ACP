@@ -156,7 +156,7 @@ if __name__ == "__main__":
             IMAGE_EXTENSION
             )
     elif args.instrument == 'artemis':
-        from artemis import (
+        from speculoos_artemis import (
             BASE_DIR,
             IMAGE_EXTENSION
             )
