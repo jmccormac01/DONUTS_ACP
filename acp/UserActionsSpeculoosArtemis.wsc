@@ -195,7 +195,7 @@ function startDonuts(){
 //------------------------------------------------------------------------------
 function stopDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\My Documents\\GitHub\\DONUTS_ACP";
+    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
     var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
