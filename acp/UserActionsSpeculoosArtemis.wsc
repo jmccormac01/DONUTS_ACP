@@ -140,12 +140,13 @@ Edit History:
 //------------------------------------------------------------------------------
 function startDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\My Documents\\GitHub\\DONUTS_ACP";
-    var guideScript = workDir + "\\donuts_process.py";
+    //var workDir = "C:\\Users\\speculoos\\My Documents\\GitHub\\DONUTS_ACP";
+    //var guideScript = workDir + "\\donuts_process.py";
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
-    Console.PrintLine("Starting donuts...");
-    Console.PrintLine("Testing new registry...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
+    //Console.PrintLine("Starting donuts...");
+    Console.PrintLine("Tying Python only...");
+    //var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
+    var TID = Util.ShellExec(pyPath);
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
