@@ -143,8 +143,8 @@ function startDonuts(){
     //var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
     //var guideScript = workDir + "\\donuts_process.py";
     Console.PrintLine("Starting donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
-    var startCommandArg = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py start\""
+    var pyPath = "C:\\ProgramData\\Miniconda3\\python.exe";
+    var startCommandArg = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py start"
     var fullString = pyPath + " " + startCommandArg;
     Console.PrintLine(fullString);
     var TID = Util.ShellExec(pyPath, startCommandArg);
@@ -199,8 +199,8 @@ function stopDonuts(){
     //var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
     //var guideScript = workDir + "\\donuts_process.py";
     Console.PrintLine("Stopping donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
-    var stopCommandArg = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py stop\""
+    var pyPath = "C:\\ProgramData\\Miniconda3\\python.exe";
+    var stopCommandArg = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py stop"
     var fullString = pyPath + " " + stopCommandArg;
     Console.PrintLine(fullString);
     var TID = Util.ShellExec(pyPath, stopCommandArg);
