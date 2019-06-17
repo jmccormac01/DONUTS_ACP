@@ -142,7 +142,7 @@ Edit History:
 function moveShuttersToPosition(south, north){
     var Console = Util.Console;
     var workDir = "C:\\Users\\nites\\Documents\\GitHub\\domed\\";
-    var domeScript = workDir + "\\nites-dome";
+    var domeScript = workDir + "\\dome";
     var pyPath = "\"C:\\Users\\nites\\Anaconda2\\envs\\snakes\\python.exe\"";
     // Fully open the dome shutters first
     Console.PrintLine("Repositioning dome shutters...");
@@ -162,7 +162,7 @@ function moveShuttersToPosition(south, north){
     var exStat = Util.GetTaskExitStatus(TID);
     if (exStat !== 0)
     {
-        Util.Console.PrintLine("nites-dome script failed to fully open, exit status = " + exStat);
+        Util.Console.PrintLine("dome script failed to fully open, exit status = " + exStat);
         return "";
     }
     Console.PrintLine("Dome fully opened successfully...");
@@ -184,7 +184,7 @@ function moveShuttersToPosition(south, north){
         var exStat = Util.GetTaskExitStatus(TID);
         if (exStat !== 0)
         {
-            Util.Console.PrintLine("nites-dome script failed to set south shutter, exit status = " + exStat);
+            Util.Console.PrintLine("dome script failed to set south shutter, exit status = " + exStat);
             return "";
         }
         Console.PrintLine("South shutter set successfully...");
@@ -209,7 +209,7 @@ function moveShuttersToPosition(south, north){
         var exStat = Util.GetTaskExitStatus(TID);
         if (exStat !== 0)
         {
-            Util.Console.PrintLine("nites-dome script failed to set north shutter, exit status = " + exStat);
+            Util.Console.PrintLine("dome script failed to set north shutter, exit status = " + exStat);
             return "";
         }
         Console.PrintLine("North shutter set successfully...");
@@ -407,6 +407,8 @@ function TargetStart(Plan, Target, NextTarget){
     var Console = Util.Console;
     Console.PrintLine("Custom UserAction for TargetStart called");
     // adjust dome shutter positions
+    // TODO commented out until new dome is mapped
+    /*
     if (Target.Tags !== null){
         if (Target.Tags.Shutters !== undefined){
             var shutter_positions = Target.Tags.Shutters.split(',');
@@ -422,6 +424,7 @@ function TargetStart(Plan, Target, NextTarget){
             }
         }
     }
+    */
     return true;
 }
 

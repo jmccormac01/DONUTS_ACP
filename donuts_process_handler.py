@@ -2,7 +2,7 @@
 Process handler for ACP to control Donuts
 
 This code should be started when the control machine is booted.
-It will run all the time and spawn AG processes when requested.
+It will run all the time anspawn AG processes when requested.
 If this code is not running, the AG requests will not be met
 and the ACP plans will continue with no guiding.
 
