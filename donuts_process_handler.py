@@ -262,7 +262,7 @@ class Autoguider(object):
             return ag_status.success
 
     @Pyro4.expose
-    @Pyro4.oneway
+    #@Pyro4.oneway
     def shutdown(self):
         """
         Exposed method to shutdown the donuts process handler (this script)
@@ -283,7 +283,7 @@ class Autoguider(object):
         # check for a guiding process, just in case
         ag_stopped = self.stop_ag()
         ag_shutdown = self.daemon.shutdown()
-        return (ag_stopped, ag_shutdown)
+        return ag_stopped, ag_shutdown
 
 if __name__ == "__main__":
     args = argParse()
