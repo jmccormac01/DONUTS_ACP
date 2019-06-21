@@ -281,8 +281,9 @@ class Autoguider(object):
         """
         print('Shutting down the donuts process handler...')
         # check for a guiding process, just in case
-        self.stop_ag()
-        self.daemon.shutdown()
+        ag_stopped = self.stop_ag()
+        ag_shutdown = self.daemon.shutdown()
+        return (ag_stopped, ag_shutdown)
 
 if __name__ == "__main__":
     args = argParse()
