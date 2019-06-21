@@ -20,7 +20,8 @@ def arg_parse():
                    help='\'start\' | \'stop\' the donuts process (or \'shutdown\' donuts process handler)',
                    choices=['start', 'stop', 'shutdown'])
     p.add_argument('--debug',
-                   help='Enable debugging mode')
+                   help='Enable debugging mode',
+                   action='store_true')
     return p.parse_args()
 
 if __name__ == "__main__":
