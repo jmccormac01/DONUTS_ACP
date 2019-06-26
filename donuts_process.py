@@ -21,7 +21,7 @@ def arg_parse():
                    choices=['start', 'stop', 'shutdown'])
     p.add_argument('--nodebug',
                    help='Enable debugging mode',
-                   action='store_false')
+                   action='store_true')
     return p.parse_args()
 
 if __name__ == "__main__":
