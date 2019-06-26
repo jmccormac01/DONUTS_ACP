@@ -144,12 +144,12 @@ function startDonuts(){
     //var guideScript = workDir + "\\donuts_process.py";
     Console.PrintLine("Starting donuts...");
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
-    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\""
+    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py start\""
     // this is a dummy string for the log, it's not actually run
-    var fullString = pyPath + " " +  guideScript + " start";
+    var fullString = pyPath + " " +  guideScript;
     Console.PrintLine(fullString);
     // make the string to execute
-    var TID = Util.ShellExec(pyPath,  guideScript + " start");
+    var TID = Util.ShellExec(pyPath,  guideScript);
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -198,11 +198,9 @@ function startDonuts(){
 //------------------------------------------------------------------------------
 function stopDonuts(){
     var Console = Util.Console;
-    //var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
-    //var guideScript = workDir + "\\donuts_process.py";
     Console.PrintLine("Stopping donuts...");
     var pyPath = "C:\\ProgramData\\Miniconda3\\python.exe";
-    var stopCommandArg = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py stop --debug"
+    var stopCommandArg = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py"
     var fullString = pyPath + " " + stopCommandArg;
     Console.PrintLine(fullString);
     var TID = Util.ShellExec(pyPath, stopCommandArg);
