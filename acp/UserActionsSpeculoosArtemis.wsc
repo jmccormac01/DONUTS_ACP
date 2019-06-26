@@ -141,7 +141,7 @@ Edit History:
 function startDonuts(){
     var Console = Util.Console;
     Console.PrintLine("Starting donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
     var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
     // this is a dummy string for the log, it's not actually run
     var fullString = pyPath + " " +  guideScript;
@@ -197,7 +197,7 @@ function startDonuts(){
 function stopDonuts(){
     var Console = Util.Console;
     Console.PrintLine("Stopping donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
     var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"stop\""
     var fullString = pyPath + " " + guideScript;
     Console.PrintLine(fullString);
