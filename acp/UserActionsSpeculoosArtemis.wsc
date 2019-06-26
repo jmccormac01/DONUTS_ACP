@@ -140,8 +140,6 @@ Edit History:
 //------------------------------------------------------------------------------
 function startDonuts(){
     var Console = Util.Console;
-    //var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
-    //var guideScript = workDir + "\\donuts_process.py";
     Console.PrintLine("Starting donuts...");
     var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
