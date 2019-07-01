@@ -1,5 +1,5 @@
 """
-Confiuguration parameters for SPECULOOS Europa
+Confiuguration parameters for SPECULOOS Artemis
 """
 # e.g. .fits or .fit etc
 IMAGE_EXTENSION = ".fts"
@@ -29,13 +29,13 @@ IMAGES_TO_STABILISE = 10
 SIGMA_BUFFER = 10
 
 # pulseGuide conversions
-PIX2TIME = {'+x': 69.62,
-            '-x': 69.55,
+PIX2TIME = {'+x': 69.24,
+            '-x': 69.57,
             '+y': 69.27,
-            '-y': 69.34}
+            '-y': 69.31}
 
 # guide directions
-DIRECTIONS = {'-y': 0, '+y': 1, '+x': 2, '-x': 3}
+DIRECTIONS = {'-y': 0, '+y': 1, '-x': 2, '+x': 3}
 
 # max allowed shift to correct
 MAX_ERROR_PIXELS = 20
@@ -63,9 +63,9 @@ DB_DATABASE = "spec_ops"
 DB_PASS = 'spec_ops'
 
 # observatory location for sun calculations
-OLAT = -24.-(37./60.)-(38./3600.)
-OLON = -70.-(24./60.)-(15./3600.)
-ELEV = 2418.
+OLAT = 28.+(18./60.)+(00./3600.)
+OLON = -16.-(30./60.)-(35./3600.)
+ELEV = 2390.
 
 # set the limit where donuts will shut off automatically
 SUNALT_LIMIT = 0
