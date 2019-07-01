@@ -74,6 +74,7 @@ Edit History:
     13-Apr-18   Adds TargetStart and TargetEnd support for triggering Donuts - JMCC
     14-Apr-18   Spotted script was mix of VBSCRIPT & JSCRIPT, ported it to JScript - JMCC
     29-Apr-18   Settled on final layout, TargetStart() and ScriptEnd() to handle donuts - JMCC
+    26-Apr-19   Cloned SPECULOOS script and modified for Saint-Ex - JMCC
 -----------------------------------------------------------------------------------------
 ]]>
 	</comment>
@@ -140,14 +141,11 @@ Edit History:
 //------------------------------------------------------------------------------
 function startDonuts(){
     var Console = Util.Console;
+    var workDir = "C:\\Users\\Space\\Documents\\GitHub\\DONUTS_ACP";
+    var guideScript = workDir + "\\donuts_process.py";
+    var pyPath = "\"C:\\Users\\Space\\Miniconda3\\python.exe\"";
     Console.PrintLine("Starting donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
-    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
-    // this is a dummy string for the log, it's not actually run
-    var fullString = pyPath + " " +  guideScript;
-    Console.PrintLine(fullString);
-    // make the string to execute
-    var TID = Util.ShellExec(pyPath,  guideScript);
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -196,14 +194,11 @@ function startDonuts(){
 //------------------------------------------------------------------------------
 function stopDonuts(){
     var Console = Util.Console;
+    var workDir = "C:\\Users\\Space\\Documents\\GitHub\\DONUTS_ACP";
+    var guideScript = workDir + "\\donuts_process.py";
+    var pyPath = "\"C:\\Users\\Space\\Miniconda3\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
-    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"stop\""
-    // this is a dummy string for the log, it's not actually run
-    var fullString = pyPath + " " +  guideScript;
-    Console.PrintLine(fullString);
-    // make the string to execute
-    var TID = Util.ShellExec(pyPath,  guideScript);
+    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" stop" + "\"");
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
