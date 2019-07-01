@@ -29,10 +29,10 @@ IMAGES_TO_STABILISE = 10
 SIGMA_BUFFER = 10
 
 # pulseGuide conversions
-PIX2TIME = {'+x': 69.10,
-            '-x': 69.11,
-            '+y': 69.15,
-            '-y': 69.27}
+PIX2TIME = {'+x': 68.88,
+            '-x': 68.73,
+            '+y': 68.86,
+            '-y': 68.95}
 
 # guide directions
 DIRECTIONS = {'-y': 0, '+y': 1, '+x': 2, '-x': 3}
