@@ -140,11 +140,14 @@ Edit History:
 //------------------------------------------------------------------------------
 function startDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
-    var guideScript = workDir + "\\donuts_process.py";
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Starting donuts...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" start" + "\"");
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
+    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
+    // this is a dummy string for the log, it's not actually run
+    var fullString = pyPath + " " +  guideScript;
+    Console.PrintLine(fullString);
+    // make the string to execute
+    var TID = Util.ShellExec(pyPath,  guideScript);
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
@@ -193,11 +196,14 @@ function startDonuts(){
 //------------------------------------------------------------------------------
 function stopDonuts(){
     var Console = Util.Console;
-    var workDir = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP";
-    var guideScript = workDir + "\\donuts_process.py";
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\python.exe\"";
     Console.PrintLine("Stopping donuts...");
-    var TID = Util.ShellExec(pyPath, "\"" + guideScript + "\" stop" + "\"");
+    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
+    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"stop\""
+    // this is a dummy string for the log, it's not actually run
+    var fullString = pyPath + " " +  guideScript;
+    Console.PrintLine(fullString);
+    // make the string to execute
+    var TID = Util.ShellExec(pyPath,  guideScript);
     var timeout = 60;
     while(Util.IsTaskActive(TID))
     {
