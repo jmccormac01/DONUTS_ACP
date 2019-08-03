@@ -407,8 +407,6 @@ function TargetStart(Plan, Target, NextTarget){
     var Console = Util.Console;
     Console.PrintLine("Custom UserAction for TargetStart called");
     // adjust dome shutter positions
-    // TODO commented out until new dome is mapped
-    /*
     if (Target.Tags !== null){
         if (Target.Tags.Shutters !== undefined){
             var shutter_positions = Target.Tags.Shutters.split(',');
@@ -424,7 +422,6 @@ function TargetStart(Plan, Target, NextTarget){
             }
         }
     }
-    */
     return true;
 }
 
