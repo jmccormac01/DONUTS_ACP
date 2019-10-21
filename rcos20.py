@@ -14,7 +14,7 @@ FIELD_KEYWORD = 'OBJECT'
 RA_AXIS = 'x'
 
 # imager position angle
-CAMERA_ANGLE = 1.2
+CAMERA_ANGLE = 0.0
 
 # guider log file name
 LOGFILE = "guider.log"
@@ -44,11 +44,11 @@ MAX_ERROR_PIXELS = 20
 MAX_ERROR_STABIL_PIXELS = 40
 
 # ACP data base directory
-BASE_DIR = ""
+BASE_DIR = "C:\\Users\\itelescope\\Documents\\ACP Astronomy\\Images"
 DATA_SUBDIR = ""
-AUTOGUIDER_REF_DIR = ""
-PYTHONPATH = "C:\\ProgramData\\Miniconda3\\python.exe"
-DONUTSPATH = "C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP"
+AUTOGUIDER_REF_DIR = "C:\\Users\\itelescope\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
+PYTHONPATH = "C:\\Users\\itelescope\\\Miniconda3\\python.exe"
+DONUTSPATH = "C:\\Users\\itelescope\\Documents\\GitHub\\DONUTS_ACP"
 
 # PID loop coefficients
 PID_COEFFS = {'x': {'p': 0.70, 'i': 0.02, 'd': 0.0},
