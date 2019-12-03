@@ -29,6 +29,10 @@ IMAGES_TO_STABILISE = 10
 SIGMA_BUFFER = 5
 
 # pulseGuide conversions
+# Equatorial fork = EQFK
+# German equatorial = GEM
+MOUNT_TYPE = "EQFK"
+PIER_SIDE_KEYWORD = ""
 PIX2TIME = {'+x': 100.00,
             '-x': 100.00,
             '+y': 100.00,

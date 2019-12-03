@@ -29,13 +29,23 @@ IMAGES_TO_STABILISE = 10
 SIGMA_BUFFER = 10
 
 # pulseGuide conversions
-PIX2TIME = {'+x': 68.88,
-            '-x': 68.73,
-            '+y': 68.86,
-            '-y': 68.95}
+# Equatorial fork = EQFK
+# German equatorial = GEM
+MOUNT_TYPE = "GEM"
+PIER_SIDE_KEYWORD = ""
+PIX2TIME = {"east": {'+x': 37.77,
+                     '-x': 37.61,
+                     '+y': 37.69,
+                     '-y': 37.59},
+            "west": {'+x': 37.86,
+                     '-x': 37.71,
+                     '+y': 37.67,
+                     '-y': 37.67}}
 
 # guide directions
-DIRECTIONS = {'-y': 0, '+y': 1, '+x': 2, '-x': 3}
+# these are the directions when "looking" east or west
+DIRECTIONS = {"east": {'-y': 3, '+y': 2, '+x': 1, '-x': 0},
+              "west": {'-y': 2, '+y': 3, '+x': 1, '-x': 0}}
 
 # max allowed shift to correct
 MAX_ERROR_PIXELS = 20

@@ -116,7 +116,7 @@ def strtime(dt):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 # apply guide corrections
-def guide(x, y, images_to_stabilise):
+def guide(x, y, images_to_stabilise, gem=False):
     """
     Generic autoguiding command with built-in PID control loop
     guide() will track recent autoguider corrections and ignore
@@ -139,6 +139,13 @@ def guide(x, y, images_to_stabilise):
         If -ve, field has stabilised
         If +ve allow for bigger shifts and do not append
         ag values to buffers
+    gem : boolean
+        Are we using a German Equatorial Mount?
+        Default = False
+        If so, the side of the pier matters for correction
+        directions. Ping the mount for pierside before applying
+        a correction. If this turns out to be slow, we can do so
+        only when in the HA range for a pier flip
 
     Returns
     -------
@@ -157,6 +164,8 @@ def guide(x, y, images_to_stabilise):
     ------
     None
     """
+
+
     connected = myScope.Connected
     if str(connected) == 'True':
         # get telescope declination to scale RA corrections
