@@ -50,7 +50,7 @@ def argParse():
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
                             'ganymede', 'saintex',
-                            'artemis', 'nites'])
+                            'artemis', 'nites', 'rcos20'])
     return p.parse_args()
 
 class Autoguider(object):
@@ -301,6 +301,8 @@ if __name__ == "__main__":
         from saintex import *
     elif args.instrument == 'artemis':
         from speculoos_artemis import *
+    elif args.instrument == 'rcos20':
+        from rcos20 import *
     else:
         sys.exit(1)
 

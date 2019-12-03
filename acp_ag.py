@@ -69,7 +69,7 @@ def argParse():
                    help='select an instrument',
                    choices=['io', 'callisto', 'europa',
                             'ganymede', 'saintex', 'nites',
-                            'artemis'])
+                            'artemis', 'rcos20'])
     return p.parse_args()
 
 def getSunAlt(observatory):
@@ -721,6 +721,8 @@ if __name__ == "__main__":
         from saintex import *
     elif args.instrument == 'artemis':
         from speculoos_artemis import *
+    elif args.instrument == 'rcos20':
+        from rcos20 import *
     else:
         sys.exit(1)
 

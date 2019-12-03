@@ -29,7 +29,7 @@ def argParse():
                    choices=['nites', 'io',
                             'callisto', 'europa',
                             'ganymede', 'saintex',
-                            'artemis'])
+                            'artemis', 'rcos20'])
     p.add_argument('--pulse_time',
                    help='time (ms) to pulse the mount during calibration',
                    default=5000)
@@ -162,6 +162,11 @@ if __name__ == "__main__":
             )
     elif args.instrument == 'nites':
         from nites import (
+            BASE_DIR,
+            IMAGE_EXTENSION
+            )
+    elif args.instrument == 'rcos20':
+        from rcos20 import (
             BASE_DIR,
             IMAGE_EXTENSION
             )

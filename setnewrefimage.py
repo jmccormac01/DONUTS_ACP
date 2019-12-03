@@ -49,7 +49,7 @@ def argParse():
                    help='Name of telescope',
                    choices=['io', 'callisto', 'europa',
                             'ganymede', 'artemis', 'saintex',
-                            'nites'])
+                            'nites', 'rcos20'])
     p.add_argument('filt',
                    help='Name of filter')
     return p.parse_args()
@@ -288,6 +288,8 @@ if __name__ == "__main__":
         from speculoos_artemis import *
     elif args.telescope == 'saintex':
         from saintex import *
+    elif args.telescope == 'rcos20':
+        from rcos20 import *
     else:
         sys.exit(1)
     checkForPreviousRefImage(args.field, args.telescope, args.filt)
