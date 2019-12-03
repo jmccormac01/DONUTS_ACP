@@ -53,7 +53,9 @@ Follow the steps below to install the prerequisite software required to run Donu
 
 ## Setting up MySQL database and autoguiding tables
 
-A MySQL database is used to store information on the autoguiding reference images and the stats from the autoguiding in real time. Set up the database as follows:
+A MySQL database is used to store information on the autoguiding reference images and the stats from the autoguiding in real time.
+
+Set up the database as follows:
 
    1. Open a MySQL terminal
    1. Enter SQL mode using ```\sql```
@@ -63,15 +65,17 @@ A MySQL database is used to store information on the autoguiding reference image
    1. Create three tables using the schemas below. The multiline ```CREATE TABLE``` commands can be pasted into the terminal.
    1. Add the database name, database host, username and password to the instrument configuration file (see below).
 
+### Equatorial Telescope Schema
+
 ```sql
 CREATE TABLE autoguider_ref (
-  ref_id mediumint auto_increment primary key,
-  field varchar(100) not null,
-  telescope varchar(20) not null,
-  ref_image varchar(100) not null,
-  filter varchar(20) not null,
-  valid_from datetime not null,
-  valid_until datetime
+   ref_id mediumint auto_increment primary key,
+   field varchar(100) not null,
+   telescope varchar(20) not null,
+   ref_image varchar(100) not null,
+   filter varchar(20) not null,
+   valid_from datetime not null,
+   valid_until datetime
 );
 
 CREATE TABLE autoguider_log_new (
@@ -100,9 +104,55 @@ CREATE TABLE autoguider_info_log (
 );
 ```
 
-## Instrument configuration
+### Equatorial Telescope Schema
 
-Create a new instrument configuration file in the ```DONUTS_ACP``` folder. Use the NITES or SPECULOOS files as a template and add your specific values. Below is an example of the NITES configuration.
+```sql
+CREATE TABLE autoguider_ref (
+   ref_id mediumint auto_increment primary key,
+   field varchar(100) not null,
+   pier_side char(4) not null,
+   telescope varchar(20) not null,
+   ref_image varchar(100) not null,
+   filter varchar(20) not null,
+   valid_from datetime not null,
+   valid_until datetime
+);
+
+CREATE TABLE autoguider_log_new (
+   updated timestamp default current_timestamp on update current_timestamp,
+   night date not null,
+   reference varchar(150) not null,
+   comparison varchar(150) not null,
+   stabilised varchar(5) not null,
+   shift_x double not null,
+   shift_y double not null,
+   pre_pid_x double not null,
+   pre_pid_y double not null,
+   post_pid_x double not null,
+   post_pid_y double not null,
+   std_buff_x double not null,
+   std_buff_y double not null,
+   culled_max_shift_x varchar(5) not null,
+   culled_max_shift_y varchar(5) not null
+   pier_side char(4) not null,
+);
+
+CREATE TABLE autoguider_info_log (
+   message_id mediumint not null auto_increment primary key,
+   updated timestamp default current_timestamp on update current_timestamp,
+   telescope varchar(20) not null,
+   message varchar(500) not null
+);
+```
+
+## Instrument Configurations
+
+Each instrument needs a Python configuration file. It should be stored in the ```DONUTS_ACP``` folder.
+Below are some examples for an equatorial and german equatorial telescope
+
+### Example Equatorial Telescope Config
+
+Use the NITES or SPECULOOS files as a template for an equatorial fork telescope. Each of the values below are required.
 
 ```python
 """
@@ -135,6 +185,12 @@ IMAGES_TO_STABILISE = 10
 # outlier rejection sigma
 SIGMA_BUFFER = 5
 
+# Equatorial fork = EQFK
+# German equatorial = GEM
+MOUNT_TYPE = "EQFK"
+# pier side keyword is not required for non-GEM telescopes
+# see below for more info
+PIER_SIDE_KEYWORD = ""
 # pulseGuide conversions
 # these values come from running calibrate_pulse_guide.py
 PIX2TIME = {'+x': 100.00,
@@ -178,6 +234,32 @@ ELEV = 2326.
 
 # set the limit where donuts will shut off automatically
 SUNALT_LIMIT = 0
+```
+
+### Example German Equatorial Telescope Config
+
+For GEMs we need to tweak some parameters from the standard equatorial fork set up.
+The following parameters should be set up as below.
+
+```python
+# Equatorial fork = EQFK
+# German equatorial = GEM
+MOUNT_TYPE = "GEM"
+PIER_SIDE_KEYWORD = "PIERSIDE"
+# pulseGuide conversions
+PIX2TIME = {"east": {'+x': 37.77,
+                     '-x': 37.61,
+                     '+y': 37.69,
+                     '-y': 37.59},
+            "west": {'+x': 37.86,
+                     '-x': 37.71,
+                     '+y': 37.67,
+                     '-y': 37.67}}
+
+# guide directions
+# these are the directions when "looking" east or west
+DIRECTIONS = {"east": {'-y': 3, '+y': 2, '+x': 1, '-x': 0},
+              "west": {'-y': 2, '+y': 3, '+x': 1, '-x': 0}}
 ```
 
 # Setting up daemon mode
@@ -230,6 +312,7 @@ The ```calibrate_pulse_guide.py``` script automatically determines the scale and
       1. This will take a series of images while nudging the telescope up/down/left/right in between and measuring the offsets.
       1. The pattern is repeated 10 times and the results are returned at the end.
    1. The resulting scales and directions from ```calibrate_pulse_guide.py``` should be added the instrument configuration file under the parameters ```PIX2TIME``` and ```DIRECTIONS```. Example values can be seen in the config file above.
+   1. If using a GEM, this process should be repeated on the opposite side of the meridian and the config updated accordingly.
 
 If a camera is removed, rotated or the telescope is modified in any way requiring a new pointing model, then the ```pulseGuide``` command should be recalibrated using the steps above.
 

@@ -32,7 +32,7 @@ SIGMA_BUFFER = 10
 # Equatorial fork = EQFK
 # German equatorial = GEM
 MOUNT_TYPE = "GEM"
-PIER_SIDE_KEYWORD = ""
+PIER_SIDE_KEYWORD = "PIERSIDE"
 PIX2TIME = {"east": {'+x': 37.77,
                      '-x': 37.61,
                      '+y': 37.69,

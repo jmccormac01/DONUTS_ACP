@@ -45,7 +45,7 @@ from donuts import Donuts
 # pylint: disable = unused-wildcard-import
 
 # autoguider status flags
-ag_new_day, ag_new_start, ag_new_field, ag_new_filter, ag_no_change = range(5)
+ag_new_day, ag_new_start, ag_new_field, ag_new_filter, ag_new_pier_side, ag_no_change = range(6)
 
 # get command line arguments
 def argParse():
@@ -116,7 +116,7 @@ def strtime(dt):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 # apply guide corrections
-def guide(x, y, images_to_stabilise, gem=False):
+def guide(x, y, images_to_stabilise, gem, current_pier_side):
     """
     Generic autoguiding command with built-in PID control loop
     guide() will track recent autoguider corrections and ignore
@@ -146,6 +146,8 @@ def guide(x, y, images_to_stabilise, gem=False):
         directions. Ping the mount for pierside before applying
         a correction. If this turns out to be slow, we can do so
         only when in the HA range for a pier flip
+    current_pier_side : string
+        east or west, only applicable to GEMs
 
     Returns
     -------
@@ -164,8 +166,6 @@ def guide(x, y, images_to_stabilise, gem=False):
     ------
     None
     """
-
-
     connected = myScope.Connected
     if str(connected) == 'True':
         # get telescope declination to scale RA corrections
@@ -220,31 +220,40 @@ def guide(x, y, images_to_stabilise, gem=False):
                 pidy = -CURRENT_MAX_SHIFT
         logMessageToDb(args.instrument, "PID: {0:.2f}  {1:.2f}".format(float(pidx), float(pidy)))
 
+        # make a check here for a GEM,
+        # if so, use the correct directions and scales from config file
+        if gem:
+            p2t = PIX2TIME[current_pier_side]
+            direc = DIRECTIONS[current_pier_side]
+        else:
+            p2t = PIX2TIME
+            direc = DIRECTIONS
+
         # make another check that the post PID values are not > Max allowed
         # using >= allows for the stabilising runs to get through
         # abs() on -ve duration otherwise throws back an error
         if pidy > 0 and pidy <= CURRENT_MAX_SHIFT:
-            guide_time_y = pidy * PIX2TIME['+y']
+            guide_time_y = pidy * p2t['+y']
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
-            myScope.PulseGuide(DIRECTIONS['+y'], guide_time_y)
+            myScope.PulseGuide(direc['+y'], guide_time_y)
         if pidy < 0 and pidy >= -CURRENT_MAX_SHIFT:
-            guide_time_y = abs(pidy * PIX2TIME['-y'])
+            guide_time_y = abs(pidy * p2t['-y'])
             if RA_AXIS == 'y':
                 guide_time_y = guide_time_y/cos_dec
-            myScope.PulseGuide(DIRECTIONS['-y'], guide_time_y)
+            myScope.PulseGuide(direc['-y'], guide_time_y)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.01)
         if pidx > 0 and pidx <= CURRENT_MAX_SHIFT:
-            guide_time_x = pidx * PIX2TIME['+x']
+            guide_time_x = pidx * p2t['+x']
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
-            myScope.PulseGuide(DIRECTIONS['+x'], guide_time_x)
+            myScope.PulseGuide(direc['+x'], guide_time_x)
         if pidx < 0 and pidx >= -CURRENT_MAX_SHIFT:
-            guide_time_x = abs(pidx * PIX2TIME['-x'])
+            guide_time_x = abs(pidx * p2t['-x'])
             if RA_AXIS == 'x':
                 guide_time_x = guide_time_x/cos_dec
-            myScope.PulseGuide(DIRECTIONS['-x'], guide_time_x)
+            myScope.PulseGuide(direc['-x'], guide_time_x)
         while myScope.IsPulseGuiding == 'True':
             time.sleep(0.01)
         logMessageToDb(args.instrument, "Guide correction Applied")
@@ -261,7 +270,7 @@ def guide(x, y, images_to_stabilise, gem=False):
         return False, 0.0, 0.0, 0.0, 0.0
 
 # log guide corrections to file
-def logShiftsToFile(logfile, loglist, header=False):
+def logShiftsToFile(logfile, loglist, gem, header=False):
     """
     Log the guide corrections to disc. This log is
     typically located with the data files for each night
@@ -300,6 +309,10 @@ def logShiftsToFile(logfile, loglist, header=False):
             Culled X measurement if > max allowed shift (y | n)
         culled_max_shift_y : string
             Culled Y measurement if > max allowed shift (y | n)
+        pier_side : string
+            current pier side, only applicable to GEMs
+    gem : boolean
+        are we using a GEM?
     header : boolean
         Flag to set writing the log file header. This is done
         at the start of the night only
@@ -315,6 +328,8 @@ def logShiftsToFile(logfile, loglist, header=False):
     if header:
         line = "night  ref  check  stable  shift_x  shift_y  pre_pid_x  pre_pid_y  " \
                "post_pid_x  post_pid_y  std_buff_x  std_buff_y  culled_x  culled_y"
+        if gem:
+            line += " pier_side"
     else:
         line = "  ".join(loglist)
     with open(logfile, "a") as outfile:
@@ -347,7 +362,7 @@ def openDb(host, user, db, passwd):
                          db=db, password=passwd) as cur:
         yield cur
 
-def logShiftsToDb(qry_args):
+def logShiftsToDb(qry_args, gem):
     """
     Log the autguiding information to the database
 
@@ -356,6 +371,8 @@ def logShiftsToDb(qry_args):
     qry_args : array like
         Tuple of items to log in the database.
         See itemised list in logShiftsToFile docstring
+    gem : boolean
+        are we using a GEM?
 
     Returns
     -------
@@ -365,15 +382,26 @@ def logShiftsToDb(qry_args):
     ------
     None
     """
-    qry = """
-        INSERT INTO autoguider_log_new
-        (night, reference, comparison, stabilised, shift_x, shift_y,
-         pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, std_buff_x,
-         std_buff_y, culled_max_shift_x, culled_max_shift_y)
-        VALUES
-        (%s, %s, %s, %s, %s, %s, %s,
-         %s, %s, %s, %s, %s, %s, %s)
-        """
+    if not gem:
+        qry = """
+            INSERT INTO autoguider_log_new
+            (night, reference, comparison, stabilised, shift_x, shift_y,
+             pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, std_buff_x,
+             std_buff_y, culled_max_shift_x, culled_max_shift_y)
+            VALUES
+            (%s, %s, %s, %s, %s, %s, %s,
+             %s, %s, %s, %s, %s, %s, %s)
+            """
+    else:
+        qry = """
+            INSERT INTO autoguider_log_new
+            (night, reference, comparison, stabilised, shift_x, shift_y,
+             pre_pid_x, pre_pid_y, post_pid_x, post_pid_y, std_buff_x,
+             std_buff_y, culled_max_shift_x, culled_max_shift_y, pier_side)
+            VALUES
+            (%s, %s, %s, %s, %s, %s, %s,
+             %s, %s, %s, %s, %s, %s, %s, %s)
+            """
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
 
@@ -475,14 +503,15 @@ def getDataDir(data_subdir):
 
 # wait for the newest image
 def waitForImage(data_subdir, current_field, n_images, current_filter,
-                 current_data_dir, observatory):
+                 current_pier_side, current_data_dir, observatory, gem=False):
     """
     Wait for new images. Several things can happen:
         1. A new image comes in of new field and filter (new start)
         2. A new image comes in but of a new field (new field)
         3. A new image comes in but with a different filter (new filter)
-        4. No change occurs and same field and filter apply (no_change)
-        5. A new day's data directory is detected, or sun_alt > 0 (new_day)
+        4. A pier flip occurs (GEM mounts)
+        5. No change occurs and same field and filter apply (no_change)
+        6. A new day's data directory is detected, or sun_alt > 0 (new_day)
 
     Parameters
     ----------
@@ -496,8 +525,14 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
         name of the current filter
     current_data_dir : string
         path to current data directory
+    current_pier_side : string
+        current side of mount
+        only applies to GEM mounts
     observatory : astropy.EarthLocation
         location of the observing site
+    gem : boolean
+        german equatorial mount?
+        default = False
 
     Returns
     -------
@@ -509,7 +544,10 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
         name of the newest field
     newest_filter : string
         name of the newest filter
-
+    newest_pier_side : string
+        name of current pier side
+        'na' for EQFK
+        'east' or 'west' for GEM
     Raises
     ------
     None
@@ -518,11 +556,11 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
         # check for new data directory, i.e. tomorrow
         new_data_dir, _ = getDataDir(data_subdir)
         if new_data_dir != current_data_dir:
-            return ag_new_day, None, None, None
+            return ag_new_day, None, None, None, None
         # secondary check, check the sun altitude, quit if > 0
         sunalt = getSunAlt(observatory)
         if sunalt > SUNALT_LIMIT:
-            return ag_new_day, None, None, None
+            return ag_new_day, None, None, None, None
         # check for new images
         t = g.glob('*{}'.format(IMAGE_EXTENSION))
         if len(t) > n_images:
@@ -533,10 +571,16 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
                 # if the intial list is empty, just cycle back and try again
                 continue
             # open the newest image and check the field and filter
+            # check the pierside if a GEM mount
             try:
                 with fits.open(newest_image) as fitsfile:
                     newest_filter = fitsfile[0].header[FILTER_KEYWORD]
                     newest_field = fitsfile[0].header[FIELD_KEYWORD]
+                    if gem:
+                        newest_pier_side = fitsfile[0].header['PIER_SIDE_KEYWORD']
+                    else:
+                        newest_pier_side = "na"
+
             except FileNotFoundError:
                 # if the file cannot be accessed (not completely written to disc yet)
                 # cycle back and try again
@@ -548,18 +592,22 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
                 logMessageToDb(args.instrument,
                                'Problem accessing fits file {}, skipping...'.format(newest_image))
                 continue
-            # new start? if so, return the newest image info
-            if current_field == "" and current_filter == "":
-                return ag_new_start, newest_image, newest_field, newest_filter
+            # new start?
+            if current_field == "" and current_filter == "" and current_pier_side == "":
+                status = ag_new_start
             # check that the field is the same
             if current_field != "" and current_field != newest_field:
-                return ag_new_field, newest_image, newest_field, newest_filter
+                status = ag_new_field
             # check that the field is the same but filter has changed
             if current_field != "" and current_field == newest_field and current_filter != newest_filter:
-                return ag_new_filter, newest_image, newest_field, newest_filter
+                status = ag_new_filter
+            if current_pier_side != newest_pier_side:
+                status = ag_new_pier_side
             # check the field and filters are the same
-            if current_field != "" and current_field == newest_field and current_filter == newest_filter:
-                return ag_no_change, newest_image, newest_field, newest_filter
+            if current_field != "" and current_field == newest_field and current_filter == newest_filter and current_pier_side == newest_pier_side:
+                status = ag_no_change
+
+            return status, newest_image, newest_field, newest_filter, newest_pier_side
         # if no new images, wait for a bit
         else:
             time.sleep(0.1)
@@ -629,7 +677,7 @@ def splitObjectIdIntoPidCoeffs(filename):
         p, i, d = None, None, None
     return p, i, d
 
-def getReferenceImage(field, filt):
+def getReferenceImage(field, filt, pier_side, gem):
     """
     Look in the database for the current
     field/filter reference image
@@ -640,6 +688,10 @@ def getReferenceImage(field, filt):
         name of the current field
     filt : string
         name of the current filter
+    pier_side : string
+        current pier side, only applicable to GEMs
+    gem : boolean
+        are we using a GEM?
 
     Returns
     -------
@@ -652,15 +704,28 @@ def getReferenceImage(field, filt):
     None
     """
     tnow = datetime.utcnow().isoformat().split('.')[0].replace('T', ' ')
-    qry = """
-        SELECT ref_image
-        FROM autoguider_ref
-        WHERE field = %s
-        AND filter = %s
-        AND valid_from < %s
-        AND valid_until IS NULL
-        """
-    qry_args = (field, filt, tnow)
+    if not gem:
+        qry = """
+            SELECT ref_image
+            FROM autoguider_ref
+            WHERE field = %s
+            AND filter = %s
+            AND valid_from < %s
+            AND valid_until IS NULL
+            """
+        qry_args = (field, filt, tnow)
+    else:
+        qry = """
+            SELECT ref_image
+            FROM autoguider_ref
+            WHERE field = %s
+            AND filter = %s
+            AND pier_side = %s
+            AND valid_from < %s
+            AND valid_until IS NULL
+            """
+        qry_args = (field, filt, pier_side, tnow)
+
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
     result = cur.fetchone()
@@ -670,7 +735,7 @@ def getReferenceImage(field, filt):
         ref_image = "{}\\{}".format(AUTOGUIDER_REF_DIR, result[0])
     return ref_image
 
-def setReferenceImage(field, filt, ref_image, telescope):
+def setReferenceImage(field, filt, pier_side, ref_image, telescope, gem):
     """
     Set a new image as a reference in the database
 
@@ -680,10 +745,14 @@ def setReferenceImage(field, filt, ref_image, telescope):
         name of the current field
     filt : string
         name of the current filter
+    pier_side : string
+        current pier side, only applicable to GEMs
     ref_image : string
         name of the image to set as reference
     telescope : string
         name of the telescope
+    gem : boolean
+        are we using a GEM?
 
     Returns
     -------
@@ -692,18 +761,27 @@ def setReferenceImage(field, filt, ref_image, telescope):
     ------
     """
     tnow = datetime.utcnow().isoformat().split('.')[0].replace('T', ' ')
-    qry = """
-        INSERT INTO autoguider_ref
-        (field, telescope, ref_image,
-         filter, valid_from)
-        VALUES
-        (%s, %s, %s, %s, %s)
-        """
-    qry_args = (field, telescope, ref_image, filt, tnow)
+    if not gem:
+        qry = """
+            INSERT INTO autoguider_ref
+            (field, telescope, ref_image,
+             filter, valid_from)
+            VALUES
+            (%s, %s, %s, %s, %s)
+            """
+        qry_args = (field, telescope, ref_image, filt, tnow)
+    else:
+        qry = """
+            INSERT INTO autoguider_ref
+            (field, telescope, ref_image,
+             filter, pier_side, valid_from)
+            VALUES
+            (%s, %s, %s, %s, %s, %s)
+            """
+        qry_args = (field, telescope, ref_image, filt, pier_side, tnow)
     with openDb(DB_HOST, DB_USER, DB_DATABASE, DB_PASS) as cur:
         cur.execute(qry, qry_args)
     # copy the file to the autoguider_ref location
-    #os.system('cp {} {}'.format(ref_image, AUTOGUIDER_REF_DIR))
     copyfile(ref_image, "{}/{}".format(AUTOGUIDER_REF_DIR, ref_image))
 
 def stopAg(pypath, donutspath):
@@ -738,8 +816,17 @@ if __name__ == "__main__":
     # set up observatory location from coords in telescope file
     observatory = EarthLocation(lat=OLAT*u.deg, lon=OLON*u.deg, height=ELEV*u.m)
 
+    # Are we using a GEM?
+    if MOUNT_TYPE == "GEM":
+        gem = True
+    else:
+        gem = False
+
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
+    if gem:
+        ref_track['east'] = defaultdict(dict)
+        ref_track['west'] = defaultdict(dict)
 
     # outer loop to loop over field and night changes etc
     while 1:
@@ -783,14 +870,14 @@ if __name__ == "__main__":
         # get a list of the images in the directory
         templist = g.glob('*{}'.format(IMAGE_EXTENSION))
         # add the logfile header row
-        logShiftsToFile(LOGFILE, [], header=True)
+        logShiftsToFile(LOGFILE, [], gem, header=True)
         # check for any data in there
         n_images = len(templist)
         # if no images appear before the end of the night
         # just die quietly
         if n_images == 0:
             ag_status, last_file, _, _ = waitForImage(DATA_SUBDIR, "", n_images,
-                                                      "", data_loc, observatory)
+                                                      "", "", data_loc, observatory)
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
@@ -804,12 +891,18 @@ if __name__ == "__main__":
                 # current field and filter?
                 current_filter = ff[0].header[FILTER_KEYWORD]
                 current_field = ff[0].header[FIELD_KEYWORD]
+                if gem:
+                    current_pier_side = ff[0].header[PIER_SIDE_KEYWORD].lower()
+                else:
+                    current_pier_side = "na"
                 # Look for a reference image for this field/filter
-                ref_file = getReferenceImage(current_field, current_filter)
+                ref_file = getReferenceImage(current_field, current_filter,
+                                             current_pier_side, gem)
                 # if there is no reference image, set this one as it and continue
                 # set the previous reference image
                 if not ref_file:
-                    setReferenceImage(current_field, current_filter, last_file, args.instrument)
+                    setReferenceImage(current_field, current_filter, current_pier_side,
+                                      last_file, args.instrument, gem)
                     ref_file = "{}\\{}".format(AUTOGUIDER_REF_DIR, last_file)
         except IOError:
             logMessageToDb(args.instrument, "Problem opening {}...".format(last_file))
@@ -818,7 +911,10 @@ if __name__ == "__main__":
 
         # finally, load up the reference file for this field/filter
         logMessageToDb(args.instrument, "Ref_File: {}".format(ref_file))
-        ref_track[current_field][current_filter] = ref_file
+        if gem:
+            ref_track[current_pier_side][current_field][current_filter] = ref_file
+        else:
+            ref_track[current_field][current_filter] = ref_file
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
         # number of images alloed during initial pull in
@@ -828,38 +924,39 @@ if __name__ == "__main__":
 
         # Now wait on new images
         while 1:
-            ag_status, check_file, current_field, current_filter = waitForImage(DATA_SUBDIR,
-                                                                                current_field,
-                                                                                n_images,
-                                                                                current_filter,
-                                                                                data_loc,
-                                                                                observatory)
+            ag_status, check_file, current_field, current_filter, \
+            current_pier_side = waitForImage(DATA_SUBDIR, current_field,
+                                             n_images, current_filter,
+                                             current_pier_side,
+                                             data_loc, observatory)
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
                 stopAg(PYTHONPATH, DONUTSPATH)
-            elif ag_status == ag_new_field or ag_status == ag_new_filter:
+            elif ag_status == ag_new_field or ag_status == ag_new_filter or ag_new_pier_side:
                 logMessageToDb(args.instrument,
-                               "New field/filter detected, looking for previous reference image...")
+                               "New field/filter/pier_side detected, looking for previous reference image...")
                 # reset the PID coeffs to not carry performance across objects
-                logMessageToDb(args.instrument, 'Resetting PID loop for new field...')
+                logMessageToDb(args.instrument, 'Resetting PID loop for new field/filter/pier_side...')
                 PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
                 PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
                 PIDx.setPoint(PID_COEFFS['set_x'])
                 PIDy.setPoint(PID_COEFFS['set_y'])
                 try:
-                    ref_file = ref_track[current_field][current_filter]
+                    if gem:
+                        ref_file = ref_track[current_pier_side][current_field][current_filter]
+                    else:
+                        ref_file = ref_track[current_field][current_filter]
                     donuts_ref = Donuts(ref_file)
                     images_to_stabilise = IMAGES_TO_STABILISE
                 except KeyError:
-                    logMessageToDb(args.instrument, 'No reference in ref_track for this field/filter')
+                    logMessageToDb(args.instrument, 'No reference in ref_track for this field/filter/pier_side')
                     logMessageToDb(args.instrument, 'Skipping back to reference image checks...')
                     break
             else:
-                logMessageToDb(args.instrument, "Same field and same filter, continuing...")
+                logMessageToDb(args.instrument, "Same field/filter/pier_side, continuing...")
                 logMessageToDb(args.instrument,
-                               "REF: {} CHECK: {} [{}]".format(ref_track[current_field][current_filter],
-                                                               check_file, current_filter))
+                               "REF: {} CHECK: {} [{}, {}]".format(ref_file, check_file, current_filter, current_pier_side))
                 images_to_stabilise -= 1
                 # if we are done stabilising, reset the PID loop
                 if images_to_stabilise == 0:
@@ -937,7 +1034,8 @@ if __name__ == "__main__":
             else:
                 applied, post_pid_x, post_pid_y, \
                     std_buff_x, std_buff_y = guide(pre_pid_x, pre_pid_y,
-                                                   images_to_stabilise)
+                                                   images_to_stabilise, gem,
+                                                   current_pier_side)
                 # !applied means no telescope, break to tomorrow
                 if not applied:
                     logMessageToDb(args.instrument,
@@ -957,11 +1055,12 @@ if __name__ == "__main__":
                         str(round(std_buff_y, 3)),
                         culled_max_shift_x,
                         culled_max_shift_y]
-
+            if gem:
+                log_list.append(current_pier_side)
             # log info to file
-            logShiftsToFile(LOGFILE, log_list)
+            logShiftsToFile(LOGFILE, log_list, gem)
             # log info to database - enable when DB is running
-            logShiftsToDb(tuple(log_list))
+            logShiftsToDb(tuple(log_list), gem)
             # reset the comparison templist so the nested while(1) loop
             # can find new images
             templist = g.glob("*{}".format(IMAGE_EXTENSION))
