@@ -197,7 +197,7 @@ if __name__ == "__main__":
             # rcos20 seems to return not guiding before it's actually stopped.
             # adding small delay for now
             if args.instrument == 'rcos20':
-                time.sleep(2)
+                time.sleep(5)
             takeImageWithMaxIm(myCamera, check)
             shift = donuts_ref.measure_shift(check)
             direction, magnitude = determineShiftDirectionMagnitude(shift)
