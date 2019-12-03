@@ -194,6 +194,10 @@ if __name__ == "__main__":
             pulseGuide(myScope, j, args.pulse_time)
             check, image_id = newFilename(data_dir, j, args.pulse_time,
                                           image_id, IMAGE_EXTENSION)
+            # rcos20 seems to return not guiding before it's actually stopped.
+            # adding small delay for now
+            if args.instrument == 'rcos20':
+                time.sleep(2)
             takeImageWithMaxIm(myCamera, check)
             shift = donuts_ref.measure_shift(check)
             direction, magnitude = determineShiftDirectionMagnitude(shift)
