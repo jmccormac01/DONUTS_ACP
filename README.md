@@ -104,7 +104,7 @@ CREATE TABLE autoguider_info_log (
 );
 ```
 
-### Equatorial Telescope Schema
+### German Equatorial Telescope Schema
 
 ```sql
 CREATE TABLE autoguider_ref (
