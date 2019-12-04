@@ -24,6 +24,7 @@ from utils import ag_status
 # pylint: disable=invalid-name
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
+# pylint: disable=redefined-outer-name
 
 AG_ON_TIME = 10
 AG_OFF_TIME = 30
@@ -76,12 +77,13 @@ class Autoguider(object):
     ------
     None
     """
-    def __init__(self, instrument, db_info, donuts_info, pyro_uri, daemon):
+    def __init__(self, instrument, db_info, donuts_info, gem, pyro_uri, daemon):
         """
         Initialise the class
 
         See class docstring above
         """
+        self.gem = gem
         self.guiding = False
         self.proc = None
         self.instrument = instrument
@@ -159,8 +161,13 @@ class Autoguider(object):
             cur.execute(qry)
             result = cur.fetchone()
         if result:
-            print('[{}]: {}:'.format(result['updated'],
-                                     result['comparison']))
+            if self.gem:
+                print('[{} {}]: {}:'.format(result['pier_side'],
+                                            result['updated'],
+                                            result['comparison']))
+            else:
+                print('[{}]: {}:'.format(result['updated'],
+                                         result['comparison']))
             print('\tShifts: X: {:.3f} Y: {:.3f}'.format(result['shift_x'],
                                                          result['shift_y']))
             print('\tPrePID: X: {:.3f} Y: {:.3f}'.format(result['pre_pid_x'],
@@ -262,7 +269,6 @@ class Autoguider(object):
             return ag_status.success
 
     @Pyro4.expose
-    #@Pyro4.oneway
     def shutdown(self):
         """
         Exposed method to shutdown the donuts process handler (this script)
@@ -313,9 +319,14 @@ if __name__ == "__main__":
     donuts_info = {'python_path': PYTHONPATH,
                    'donuts_path': DONUTSPATH}
 
+    if MOUNT_TYPE == "GEM":
+        gem = True
+    else:
+        gem = False
+
     sys.excepthook = Pyro4.util.excepthook
     daemon = Pyro4.Daemon(host='localhost', port=9234)
-    ag = Autoguider(args.instrument, db_info, donuts_info,
+    ag = Autoguider(args.instrument, db_info, donuts_info, gem,
                     'PYRO:donuts@localhost:9234', daemon)
     uri = daemon.register(ag, objectId='donuts')
     daemon.requestLoop()
