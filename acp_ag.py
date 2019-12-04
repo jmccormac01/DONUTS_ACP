@@ -965,6 +965,10 @@ if __name__ == "__main__":
                                              n_images, current_filter,
                                              current_pier_side,
                                              data_loc, observatory)
+            if args.debug:
+                print("DEBUG: Finished waiting for image")
+                print(f"{ag_status} {check_file} {current_field} {current_filter} {current_pier_side}")
+
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
