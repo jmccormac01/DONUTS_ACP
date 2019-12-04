@@ -29,6 +29,7 @@ import pymysql
 from astropy.io import fits
 import astropy.units as u
 from astropy.time import Time
+from astropy.utils import iers
 from astropy.coordinates import (
     EarthLocation,
     AltAz,
@@ -36,6 +37,8 @@ from astropy.coordinates import (
     )
 from PID import PID
 from donuts import Donuts
+
+iers.conf.auto_download = False
 
 # pylint: disable = invalid-name
 # pylint: disable = redefined-outer-name
