@@ -55,7 +55,7 @@ MAX_ERROR_STABIL_PIXELS = 40
 
 # ACP data base directory
 BASE_DIR = "C:\\Users\\itelescope\\Documents\\ACP Astronomy\\Images"
-DATA_SUBDIR = ""
+DATA_SUBDIR = "RAW"
 AUTOGUIDER_REF_DIR = "C:\\Users\\itelescope\\Documents\\ACP Astronomy\\Images\\autoguider_ref"
 PYTHONPATH = "C:\\Users\\itelescope\\\Miniconda3\\python.exe"
 DONUTSPATH = "C:\\Users\\itelescope\\Documents\\GitHub\\DONUTS_ACP"
