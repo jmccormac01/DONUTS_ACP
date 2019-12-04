@@ -70,6 +70,9 @@ def argParse():
                    choices=['io', 'callisto', 'europa',
                             'ganymede', 'saintex', 'nites',
                             'artemis', 'rcos20'])
+    p.add_argument('--debug',
+                   help='Enable debugging messages',
+                   action='store_true')
     return p.parse_args()
 
 def getSunAlt(observatory):
@@ -329,7 +332,7 @@ def logShiftsToFile(logfile, loglist, gem, header=False):
         line = "night  ref  check  stable  shift_x  shift_y  pre_pid_x  pre_pid_y  " \
                "post_pid_x  post_pid_y  std_buff_x  std_buff_y  culled_x  culled_y"
         if gem:
-            line += " pier_side"
+            line += "  pier_side"
     else:
         line = "  ".join(loglist)
     with open(logfile, "a") as outfile:
@@ -819,17 +822,25 @@ if __name__ == "__main__":
     # Are we using a GEM?
     if MOUNT_TYPE == "GEM":
         gem = True
+        if args.debug:
+            print("DEBUG: Mount = GEM")
     else:
         gem = False
+        if args.debug:
+            print("DEBUG: Mount = EQFK")
 
     # dictionaries to hold reference images for different fields/filters
     ref_track = defaultdict(dict)
     if gem:
         ref_track['east'] = defaultdict(dict)
         ref_track['west'] = defaultdict(dict)
+    if args.debug:
+        print(f"DEBUG: Empty ref_track {ref_track}")
 
     # outer loop to loop over field and night changes etc
     while 1:
+        if args.debug:
+            print(f"DEBUG: In loop over nights")
         # initialise the PID controllers for X and Y
         PIDx = PID(PID_COEFFS['x']['p'], PID_COEFFS['x']['i'], PID_COEFFS['x']['d'])
         PIDy = PID(PID_COEFFS['y']['p'], PID_COEFFS['y']['i'], PID_COEFFS['y']['d'])
@@ -844,7 +855,11 @@ if __name__ == "__main__":
         sleep_time = 10
         # loop while waiting on data directory & scope to be connected
         while not data_loc:
+            if args.debug:
+                print(f"DEBUG: In loop for data_loc")
             data_loc, night = getDataDir(DATA_SUBDIR)
+            if args.debug:
+                print(f"DEBUG: data_loc: {data_loc}")
             if data_loc:
                 logMessageToDb(args.instrument,
                                "Found data directory: {}".format(data_loc))
@@ -885,6 +900,9 @@ if __name__ == "__main__":
         else:
             last_file = max(templist, key=os.path.getctime)
 
+        if args.debug:
+            print(f"DEBUG: ag_status: {ag_status} - last_file: {last_file}")
+
         # check we can access the last file
         try:
             with fits.open(last_file) as ff:
@@ -895,9 +913,17 @@ if __name__ == "__main__":
                     current_pier_side = ff[0].header[PIER_SIDE_KEYWORD].lower()
                 else:
                     current_pier_side = "na"
+
+                if args.debug:
+                    print(f"DEBUG: current filter: {current_filter}, field: {current_field}, pier_side: {current_pier_side}")
+
                 # Look for a reference image for this field/filter
                 ref_file = getReferenceImage(current_field, current_filter,
                                              current_pier_side, gem)
+
+                if args.debug:
+                    print(f"DEBUG: ref_file: {ref_file}")
+
                 # if there is no reference image, set this one as it and continue
                 # set the previous reference image
                 if not ref_file:
@@ -915,8 +941,16 @@ if __name__ == "__main__":
             ref_track[current_pier_side][current_field][current_filter] = ref_file
         else:
             ref_track[current_field][current_filter] = ref_file
+
+        if args.debug:
+            print(f"DEBUG: ref_track: {ref_track}")
+
         # set up the reference image with donuts
         donuts_ref = Donuts(ref_file)
+
+        if args.debug:
+            print(f"DEBUG: Loaded {ref_file} into Donuts")
+
         # number of images alloed during initial pull in
         # -ve numbers mean ag should have stabilised
         images_to_stabilise = IMAGES_TO_STABILISE
@@ -924,6 +958,8 @@ if __name__ == "__main__":
 
         # Now wait on new images
         while 1:
+            if args.debug:
+                print("DEBUG: In images loop, guiding")
             ag_status, check_file, current_field, current_filter, \
             current_pier_side = waitForImage(DATA_SUBDIR, current_field,
                                              n_images, current_filter,
