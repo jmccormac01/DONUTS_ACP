@@ -980,7 +980,7 @@ if __name__ == "__main__":
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
                 stopAg(PYTHONPATH, DONUTSPATH)
-            elif ag_status == ag_new_field or ag_status == ag_new_filter or ag_new_pier_side:
+            elif ag_status == ag_new_field or ag_status == ag_new_filter or ag_status == ag_new_pier_side:
                 logMessageToDb(args.instrument,
                                "New field/filter/pier_side detected, looking for previous reference image...")
                 # reset the PID coeffs to not carry performance across objects
