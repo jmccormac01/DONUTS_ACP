@@ -901,7 +901,7 @@ if __name__ == "__main__":
             last_file = max(templist, key=os.path.getctime)
 
         if args.debug:
-            print(f"DEBUG: ag_status: {ag_status} - last_file: {last_file}")
+            print(f"DEBUG: last_file: {last_file}")
 
         # check we can access the last file
         try:
