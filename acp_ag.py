@@ -586,9 +586,8 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
                         newest_pier_side = fitsfile[0].header['PIER_SIDE_KEYWORD'].lower()
                     else:
                         newest_pier_side = "na"
-            
-            if debug:
-                print(f"DEBUG: {newest_filter} {newest_field} {newest_pier_side}")
+                    if debug:
+                        print(f"DEBUG: {newest_filter} {newest_field} {newest_pier_side}")
 
             except FileNotFoundError:
                 # if the file cannot be accessed (not completely written to disc yet)
