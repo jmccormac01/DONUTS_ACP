@@ -577,7 +577,7 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
                     newest_filter = fitsfile[0].header[FILTER_KEYWORD]
                     newest_field = fitsfile[0].header[FIELD_KEYWORD]
                     if gem:
-                        newest_pier_side = fitsfile[0].header['PIER_SIDE_KEYWORD']
+                        newest_pier_side = fitsfile[0].header['PIER_SIDE_KEYWORD'].lower()
                     else:
                         newest_pier_side = "na"
 

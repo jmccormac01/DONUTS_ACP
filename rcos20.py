@@ -33,19 +33,21 @@ SIGMA_BUFFER = 10
 # German equatorial = GEM
 MOUNT_TYPE = "GEM"
 PIER_SIDE_KEYWORD = "PIERSIDE"
-PIX2TIME = {"east": {'+x': 37.77,
+# note pierside if given as which side of the mount the tube is on
+# so it's the opposite to the direction we are looking
+PIX2TIME = {"west": {'+x': 37.77,
                      '-x': 37.61,
                      '+y': 37.69,
                      '-y': 37.59},
-            "west": {'+x': 37.86,
+            "east": {'+x': 37.86,
                      '-x': 37.71,
                      '+y': 37.67,
                      '-y': 37.67}}
 
 # guide directions
 # these are the directions when "looking" east or west
-DIRECTIONS = {"east": {'-y': 3, '+y': 2, '+x': 1, '-x': 0},
-              "west": {'-y': 2, '+y': 3, '+x': 1, '-x': 0}}
+DIRECTIONS = {"west": {'-y': 3, '+y': 2, '+x': 1, '-x': 0},
+              "east": {'-y': 2, '+y': 3, '+x': 1, '-x': 0}}
 
 # max allowed shift to correct
 MAX_ERROR_PIXELS = 20
