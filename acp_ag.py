@@ -509,7 +509,7 @@ def getDataDir(data_subdir):
 
 # wait for the newest image
 def waitForImage(data_subdir, current_field, n_images, current_filter,
-                 current_pier_side, current_data_dir, observatory, gem=False):
+                 current_pier_side, current_data_dir, observatory, gem, debug):
     """
     Wait for new images. Several things can happen:
         1. A new image comes in of new field and filter (new start)
@@ -586,6 +586,9 @@ def waitForImage(data_subdir, current_field, n_images, current_filter,
                         newest_pier_side = fitsfile[0].header['PIER_SIDE_KEYWORD'].lower()
                     else:
                         newest_pier_side = "na"
+            
+            if debug:
+                print(f"DEBUG: {newest_filter} {newest_field} {newest_pier_side}")
 
             except FileNotFoundError:
                 # if the file cannot be accessed (not completely written to disc yet)
@@ -895,7 +898,8 @@ if __name__ == "__main__":
         # just die quietly
         if n_images == 0:
             ag_status, last_file, _, _ = waitForImage(DATA_SUBDIR, "", n_images,
-                                                      "", "", data_loc, observatory)
+                                                      "", "", data_loc, observatory,
+                                                      gem, args.debug)
             if ag_status == ag_new_day:
                 logMessageToDb(args.instrument,
                                "New day detected, ending process...")
@@ -967,7 +971,8 @@ if __name__ == "__main__":
             current_pier_side = waitForImage(DATA_SUBDIR, current_field,
                                              n_images, current_filter,
                                              current_pier_side,
-                                             data_loc, observatory)
+                                             data_loc, observatory,
+                                             gem, args.debug)
             if args.debug:
                 print("DEBUG: Finished waiting for image")
                 print(f"{ag_status} {check_file} {current_field} {current_filter} {current_pier_side}")
