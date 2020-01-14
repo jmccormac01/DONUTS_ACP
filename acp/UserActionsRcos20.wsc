@@ -437,7 +437,7 @@ function TargetStart(Plan, Target, NextTarget){
     Console.PrintLine("Custom UserAction for TargetStart called");
     //start donuts if requested
     var donutsAction = "";                                              // Default do nothing
-    if (Target.Tags !== null && Target.Tags.Donuts !== undefined) {    // Have short-circuit bools in JS :-)
+    if (Target.Tags !== null && Target.Tags.Donuts !== null) {    // Have short-circuit bools in JS :-)
         if (Target.Tags.Donuts == "on") {
             donutsAction = "on";
         } else if (Target.Tags.Donuts == "off") {
