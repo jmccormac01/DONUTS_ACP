@@ -74,6 +74,7 @@ Edit History:
     13-Apr-18   Adds TargetStart and TargetEnd support for triggering Donuts - JMCC
     14-Apr-18   Spotted script was mix of VBSCRIPT & JSCRIPT, ported it to JScript - JMCC
     29-Apr-18   Settled on final layout, TargetStart() and ScriptEnd() to handle donuts - JMCC
+    14-Jan-19   Adds support for Gavin's RCOS20, based on SPECULOOS Artemis - JMCC
 -----------------------------------------------------------------------------------------
 ]]>
 	</comment>
@@ -141,8 +142,8 @@ Edit History:
 function startDonuts(){
     var Console = Util.Console;
     Console.PrintLine("Starting donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
-    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
+    var pyPath = "\"C:\\Users\\itelescope\\Miniconda3\\python.exe\"";
+    var guideScript = "\"C:\\Users\\itelescope\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"start\""
     // this is a dummy string for the log, it's not actually run
     var fullString = pyPath + " " +  guideScript;
     Console.PrintLine(fullString);
@@ -197,8 +198,8 @@ function startDonuts(){
 function stopDonuts(){
     var Console = Util.Console;
     Console.PrintLine("Stopping donuts...");
-    var pyPath = "\"C:\\ProgramData\\Miniconda3\\envs\\snakes\\python.exe\"";
-    var guideScript = "\"C:\\Users\\speculoos\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"stop\""
+    var pyPath = "\"C:\\Users\\itelescope\\Miniconda3\\python.exe\"";
+    var guideScript = "\"C:\\Users\\itelescope\\Documents\\GitHub\\DONUTS_ACP\\donuts_process.py\" \"stop\""
     var fullString = pyPath + " " + guideScript;
     Console.PrintLine(fullString);
     var TID = Util.ShellExec(pyPath, guideScript);
