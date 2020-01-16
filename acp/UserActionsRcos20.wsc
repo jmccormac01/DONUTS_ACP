@@ -432,35 +432,25 @@ function ImageComplete(ImageFile){
 //
 // Return True to permit the target to be acquired by ACP, False will terminate
 // the observing run. Return 2 to cause the target to be skipped.
-//
-// When running from normal ACP plan, Target.Description is reported as undefined
-// So for that case we try checking if it is defined, then if it is not null we search
-//
-// For Tags, we check if there are none, then check if Donuts is defined, then if it
-// is on or not.
-//
 //------------------------------------------------------------------------------
 function TargetStart(Plan, Target, NextTarget){
     var Console = Util.Console;
     Console.PrintLine("Custom UserAction for TargetStart called");
     //start donuts if requested
-    var donutsAction = "";                                              // Default do nothing
-    if (Target.Tags !== null) {
-        if (Target.Tags.Donuts !== undefined){
-            if (Target.Tags.Donuts == "on") {
-                donutsAction = "on";
-            } else if (Target.Tags.Donuts == "off") {
-                donutsAction = "off";
-            }
+    // Default do nothing
+    var donutsAction = "";
+    if (Target.Tags !== null && Target.Tags !== undefined && Target.Tags.Donuts !== undefined){
+        if (Target.Tags.Donuts.toLowerCase() == "on") {
+            donutsAction = "on";
+        } else if (Target.Tags.Donuts.toLowerCase() == "off") {
+            donutsAction = "off";
         }
     } else if (Target.Description !== undefined) {
-        if (Target.Description !== null){
-            Console.PrintLine("Scheduler: Description is \"" + Target.Description + "\"");
-            if(Target.Description.search(/donutson/i) !== -1) {
-                donutsAction = "on";
-            } else if(Target.Description.search(/donutsoff/i) !== -1) {
-                donutsAction = "off";
-            }
+        Console.PrintLine("Scheduler: Description is \"" + Target.Description + "\"");
+        if(Target.Description.search(/donutson/i) !== -1) {
+            donutsAction = "on";
+        } else if(Target.Description.search(/donutsoff/i) !== -1) {
+            donutsAction = "off";
         }
     }
 
