@@ -31,7 +31,7 @@ SIGMA_BUFFER = 10
 # pulseGuide conversions
 # Equatorial fork = EQFK
 # German equatorial = GEM
-MOUNT_TYPE = "GEM"
+MOUNT_TYPE = "EQFK"
 PIER_SIDE_KEYWORD = ""
 PIX2TIME = {"east": {'+x': 37.77,
                      '-x': 37.61,
